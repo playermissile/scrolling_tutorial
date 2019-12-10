@@ -59,6 +59,82 @@ fillscreen_parallax
 
 
 ;
+; fill 32 lines with test pattern
+;
+fillscreen_course_test_pattern
+        ldy #0
+?loop   lda #$41
+        sta $8000,y
+        adc #1
+        sta $8028,y
+        adc #1
+        sta $8050,y
+        adc #1
+        sta $8078,y
+        adc #1
+        sta $80a0,y
+        adc #1
+        sta $80c8,y
+        adc #1
+        sta $80f0,y
+        adc #1
+        sta $8118,y
+        adc #1
+        sta $8140,y
+        adc #1
+        sta $8168,y
+        adc #1
+        sta $8190,y
+        adc #1
+        sta $81b8,y
+        adc #1
+        sta $81e0,y
+        adc #1
+        sta $8208,y
+        adc #1
+        sta $8230,y
+        adc #1
+        sta $8258,y
+        adc #1
+        sta $8280,y
+        adc #1
+        sta $82a8,y
+        adc #1
+        sta $82d0,y
+        adc #1
+        sta $82f8,y
+        adc #1
+        sta $8320,y
+        adc #1
+        sta $8348,y
+        adc #1
+        sta $8370,y
+        adc #1
+        sta $8398,y
+        adc #1
+        sta $83c0,y
+        adc #1
+        sta $83e8,y
+        adc #1
+        sta $8400,y
+        adc #1
+        sta $8428,y
+        adc #1
+        sta $8450,y
+        adc #1
+        sta $8478,y
+        adc #1
+        sta $84a0,y
+        adc #1
+        sta $84c8,y
+        iny
+        cpy #40
+        bcs ?done
+        jmp ?loop
+?done   rts
+
+
+;
 ; fill 32 pages with test pattern
 ;
 fillscreen_test_pattern
