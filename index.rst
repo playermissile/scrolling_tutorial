@@ -299,6 +299,13 @@ from scan line 4 (again, as enumerated from zero: scan lines 0, 1, 2, and 3 are
 skipped and 4, 5, 6, and 7 are rendered). The buffer zone is rendered *through*
 scan line 4 as enumerated from zero, so scan lines 0, 1, 2, 3, and 4.
 
+
+.. figure:: detail_vscrol_4.png
+   :align: center
+   :width: 90%
+
+
+
 Vertical Fine Scrolling
 ------------------------------------------
 
