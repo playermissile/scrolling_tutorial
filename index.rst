@@ -277,6 +277,47 @@ then updates the screen memory pointer.
 
 
 
+Course Scrolling Up
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Scrolling up means new data is appearing at the top of the screen, pushing data
+currently on the screen downwards and finally disappearing off the bottom of
+the screen:
+
+.. figure:: course_scroll_up.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_scroll_up.s">course_scroll_up.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_scroll_up.xex">course_scroll_up.xex</a></li>
+   </ul>
+
+This is accomplished using exactly the same method of changing the start
+address that ANTIC uses for the screen memory:
+
+.. code-block::
+
+   ; move viewport one line down by pointing display list start address
+   ; to the address 40 bytes further in memory
+   course_scroll_down
+           clc
+           lda dlist_course_address
+           adc #40
+           sta dlist_course_address
+           lda dlist_course_address+1
+           adc #0
+           sta dlist_course_address+1
+           rts
+
+But instead of adding 40 bytes, we subtract 40 bytes from the address to move
+the starting point one line prior in memory, moving what was the 1st line being
+displayed to the 2nd line and a line previously off-screen to the 1st line.
+This gives the appearance of the playfield window moving up across the map.
+
+
 
 
 Horizontal Course Scrolling
