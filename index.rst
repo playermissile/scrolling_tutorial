@@ -216,18 +216,28 @@ A Crash Course on Vertical Blank Interrupts
 
 
 
-A Crash Course on Fine Scrolling
----------------------------------------
+A Crash Course on Vertical Fine Scrolling
+-----------------------------------------------
 
+Vertical fine scrolling is controlled by ANTIC's ``VSCROL`` hardware register.
+The register can be any number from 0 - 15 representing the number of scan
+lines to scroll. ANTIC accomplishes scrolling not by moving the display list up
+and down by a number of scan lines, but by using the ``VSCROL`` value to *skip*
+that number of scan lines in the first line of the display list, essentially
+shortening the number of displayed lines.
 
+This will become more clear with an example. First, let's see what happen just
+by turning on the vertical scrolling bit on a display list.
 
 First Display List With Scrolling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here's the same example used in the :ref:`course vertical scrolling
+Here's the same program used in the :ref:`course vertical scrolling
 <course_no_scroll_dlist>` section, except now the vertical scrolling bit has
 been set on the display list instructions for the scrolling region of lines A
-through V:
+through V. Notice the first line of the mode 2 region at the bottom seems to be
+missing! Actually, it is still there, or more correctly: one scan line of it is
+still there.
 
 .. figure:: fine_vscroll_dlist.png
    :align: center
@@ -256,12 +266,9 @@ Note that the ``VSCROL`` hardware register is set to zero. Here's the display li
            .byte $2
            .byte $41,<dlist_course_mode4,>dlist_course_mode4 ; JVB ends display list
 
-Notice the first line of the mode 2 region at the bottom seems to be missing!
-Actually, it is still there, or more correctly: one scan line of it is still
-there.
-
-ANTIC uses the first scan line that doesn't have the vertical scrolling bit set
-as a sort-of *buffer zone* to the scrolling region.
+So what is the mystery of the (mostly) missing mode 2 line at the bottom? ANTIC
+uses the first scan line that doesn't have the vertical scrolling bit set as a
+sort-of *buffer zone* to the scrolling region.
 
 Here's the same example, except the ``VSCROL`` register is set to 4:
 
@@ -269,8 +276,8 @@ Here's the same example, except the ``VSCROL`` register is set to 4:
    :align: center
    :width: 90%
 
-where it shows that line A has been scrolled by 4 scan lines **and** the first
-ANTIC mode 2 line now shows 4 of its 8 scan lines.
+where it shows that 4 scan lines of line A have been scrolled off the screen
+**and** the first ANTIC mode 2 line shows 4 of its 8 scan lines.
 
 ANTIC's Vertical Scrolling Buffer Zone
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -294,30 +301,29 @@ the example, the rendering of line A starts at scan line zero of the text mode.
 The buffer zone mode 2 line that is only rendered with a single scan line: it
 stopped rendering after rendering scan line zero of that mode 2 line.
 
-In the second example with ``VSCROL`` set to 4, line A is rendered starting
-from scan line 4 (again, as enumerated from zero: scan lines 0, 1, 2, and 3 are
-skipped and 4, 5, 6, and 7 are rendered). The buffer zone is rendered *through*
-scan line 4 as enumerated from zero, so scan lines 0, 1, 2, 3, and 4.
+The second example uses ``VSCROL`` set to 4, here shown in detail:
 
 
 .. figure:: detail_vscrol_4.png
    :align: center
-   :width: 90%
+   :width: 80%
+
+The first display list line with the vertical scrolling bit set, Line A, is
+rendered starting from scan line 4 (again, as enumerated from zero: scan lines
+0, 1, 2, and 3 are skipped and 4, 5, 6, and 7 are rendered). All subsequent
+lines with their vertical scroll bit set have all 8 scan lines rendered. The
+buffer zone, that is: the first display list line without the scroll bit set,
+is rendered *through* scan line 4 as enumerated from zero, so scan lines 0, 1,
+2, 3, and 4.
 
 
 
-Vertical Fine Scrolling
-------------------------------------------
+A Crash Course on Horizontal Fine Scrolling
+------------------------------------------------------
 
 
 
 
-Horizontal Fine Scrolling
-------------------------------------------
-
-
-
-
-Combined Horizontal and Vertical Fine Scrolling
+A Crash Course on Combined Fine Scrolling
 --------------------------------------------------
 
