@@ -272,7 +272,32 @@ Here's the same example, except the ``VSCROL`` register is set to 4:
 where it shows that line A has been scrolled by 4 scan lines **and** the first
 ANTIC mode 2 line now shows 4 of its 8 scan lines.
 
+ANTIC's Vertical Scrolling Buffer Zone
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+The ``VSCROL`` hardware register controls how many scan lines are shifted for
+fine scrolling. The value tells ANTIC on which scan line to start rendering for
+the first display list instruction it encounters with the vertical scrolling
+bit set. Subsequent lines in the display list that have the vertical scrolling
+bit set are fully rendered, but because that initial scan line was rendered
+with fewer scan lines, the display has appeared to move up.
+
+What confused the author until reading section 4.7 in the `Altirra Hardware Reference Manual <http://www.virtualdub.org/downloads/Altirra%20Hardware%20Reference%20Manual.pdf>`_
+is that ``VSCROL`` value also controls where ANTIC *stops* rendering on that
+*buffer zone* display list instruction: it renders scan lines up to and
+including that value.
+
+In the first example, ``VSCROL`` is zero. ANTIC mode 4 lines are 8 scan lines
+tall, and for scrolling purposes the height of a mode line is enumerated from
+0, so an 8 scan line tall text mode has scan lines numbered 0 through 7. For
+the example, the rendering of line A starts at scan line zero of the text mode.
+The buffer zone mode 2 line that is only rendered with a single scan line: it
+stopped rendering after rendering scan line zero of that mode 2 line.
+
+In the second example with ``VSCROL`` set to 4, line A is rendered starting
+from scan line 4 (again, as enumerated from zero: scan lines 0, 1, 2, and 3 are
+skipped and 4, 5, 6, and 7 are rendered). The buffer zone is rendered *through*
+scan line 4 as enumerated from zero, so scan lines 0, 1, 2, 3, and 4.
 
 Vertical Fine Scrolling
 ------------------------------------------
