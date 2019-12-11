@@ -26,18 +26,14 @@ this tutorial, the version built-in to `Omnivore
 
 
 
-A (Small) Crash Course on Display Lists
+A Refresher on Display Lists
 --------------------------------------------
 
 Display lists are an important topic for scrolling, because certain flags on
 display list commands tell ANTIC which lines get scrolled and which are left
 alone. For a summary, check out my :ref:`tutorial on DLIs <dli_tutorial>` which
-has a large section on display list instructions.
-
-A small amount of relevant detail is repeated here, though:
-
-Display List Instruction Set
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+has a large section on display list instructions. A small amount of relevant
+detail is repeated here.
 
 An ANTIC display list instruction consists of 1 byte with an optional 2 byte
 address. There are 3 types of instructions: blank lines, graphics modes, and
@@ -58,66 +54,18 @@ The 4 flags are:
  * VSCROLL (``$20``): enable vertical scrolling for this mode line
  * HSCROLL (``$10``): enable horizontal scrolling for this mode line
 
-The 14 available graphics modes are encoded into low 4 bits using values as
-shown in this table:
+There are 14 available graphics modes, which are encoded into low 4 bits. This
+tutorial is only going to focus on three of the text modes. Any mode can be
+scrolled horizontally, and modes taller than 1 scan line can also be scrolled
+vertically, but the combination of low memory usage and large height of the
+text modes make them ideal candidates for scrolling games.
 
 .. csv-table::
 
     Mode, Decimal, BASIC Mode,  Description, Scan Lines, Type, Colors
     2, 02,    0,     40 x 24,   8, text, 2
-    3, 03,    n/a,   40 x 19,  10, text, 2
     4, 04,    n/a,   40 x 24,   8, text, 5
     5, 05,    n/a,   40 x 12,  16, text, 5
-    6, 06,    1,     20 x 24,   8, text, 5
-    7, 07,    2,     20 x 12,  16, text, 5
-    8, 08,    3,     40 x 24,   8, bitmap, 4
-    9, 09,    4,     80 x 48,   4, bitmap, 2
-    A, 10,    5,     80 x 48,   4, bitmap, 4
-    B, 11,    6,    160 x 96,   2, bitmap, 2
-    C, 12,    n/a,  160 x 192,  1, bitmap, 2
-    D, 13,    7,    160 x 96,   2, bitmap, 4
-    E, 14,    n/a,  160 x 192,  1, bitmap, 4
-    F, 15,    8,    320 x 192,  1, bitmap, 2
-
-.. note:: The important modes for scrolling are the text modes, and for games in particular ANTIC modes 4 and 5. Any modes can be scrolled horizontally, and modes taller than 1 scan line can also be scrolled vertically, but the combination of memory usage and large height of the text modes make them ideal candidates for scrolling games.
-
-Blank lines are encoded as a mode value of zero, the bits 6, 5, and 4 taking
-the meaning of the number of blank lines rather than LMS, VSCROLL, and
-HSCROLL. Note that the DLI bit is still available on blank lines, as bit 7 is
-not co-opted by the blank line instruction.
-
-.. csv-table:: Blank Line Instructions
-
-    Hex, Decimal, Blank Lines
-    0, 0, 1
-    10, 16, 2
-    20, 32, 3
-    30, 48, 4
-    40, 64, 5
-    50, 80, 6
-    60, 96, 7
-    70, 112, 8
-
-Jumps provide the capability to split a display list into multiple parts in
-different memory locations. They are encoded using a mode value of one, and
-require an additional 2 byte address where ANTIC will look for the next display
-list instruction. If bit 6 is also set, it becomes the Jump and wait for Vertical
-Blank (JVB) instruction, which is how ANTIC knows that the display list is
-finished. The DLI bit may also be set on a jump instruction, but if set on the
-JVB instruction it triggers a DLI on every scan line from there until the
-vertical blank starts on the 249th scan line.
-
-.. note::
-
-   Apart from the ``$41`` JVB instruction, splitting display lists using other
-   jumps like the ``$01`` instruction is not common. It has a side-effect of
-   producing a single blank line in the display list.
-
-The typical method to change the currently active display list is to change the
-address stored at ``SDLSTL`` (in low byte/high byte format in addresses
-``$230`` and ``$231``). At the next vertical blank, the hardware display list
-at ``DLISTL`` (``$d402`` and ``$d403``) will be updated with the values stored
-here and the screen drawing will commence using the new display list.
 
 .. seealso::
 
@@ -345,7 +293,7 @@ and down by a number of scan lines, but by using the ``VSCROL`` value to *skip*
 that number of scan lines in the first line of the display list, essentially
 shortening the number of displayed lines.
 
-This will become more clear with an example. First, let's see what happen just
+This will become more clear with an example. First, let's see what happens just
 by turning on the vertical scrolling bit on a display list.
 
 First Display List With Scrolling
