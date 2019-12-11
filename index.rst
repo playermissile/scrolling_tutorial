@@ -155,32 +155,33 @@ a line is removed from the top.) This direction is simpler than horizontal
 because only a single ``LMS`` instruction needs to be updated, so that is where
 we will start.
 
+.. _course_no_scroll_dlist:
+
 A Starting Point
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here is a display list without any scrolling, and just a single ``LMS``
-instruction on the first mode 4 line to tell ANTIC where to look in memory for
-that first line. Subsequent mode 4 lines follow immediately after in memory:
-ANTIC will use memory contiguously until told otherwise by another ``LMS``
-instruction.
+Here is a display list without any scrolling, and just a single instruction
+with ``LMS`` set in the main region of mode 4 lines. That ``LMS`` tells ANTIC
+where to look in memory for that first line and all subsequent lines until another ``LMS`` instruction is encountered.
 
-.. figure:: course_no_scroll.png
+.. figure:: course_no_scroll_dlist.png
    :align: center
    :width: 90%
 
 .. raw:: html
 
    <ul>
-   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_no_scroll.s">course_no_scroll.s</a></li>
-   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_no_scroll.xex">course_no_scroll.xex</a></li>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_no_scroll_dlist.s">course_no_scroll_dlist.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_no_scroll_dlist.xex">course_no_scroll_dlist.xex</a></li>
    </ul>
 
 All this test program does is create a display list and show a simple test
 pattern. There is nothing special about this display list, no scrolling bits
 set on any display list instructions; only the ``LMS`` instruction to set the
-initial memory location for the 22 lines of ANTIC Mode 4, and the two lines of
-ANTIC mode 2 at the bottom. (These two lines will be used as a comparison when
-we add scrolling to this display list in the next section.)
+initial memory location for the 22 lines of ANTIC Mode 4, and another ``LMS``
+for the two lines of ANTIC mode 2 at the bottom. (These two lines will be used
+as a comparison when we add scrolling to this display list in the next
+section.)
 
 .. code-block::
 
@@ -194,7 +195,6 @@ we add scrolling to this display list in the next section.)
            .byte $42,<static_text, >static_text ; 2 Mode 2 lines + LMS + address
            .byte $2
            .byte $41,<dlist_course_mode4,>dlist_course_mode4 ; JVB ends display list
-
 
 
 Horizontal Course Scrolling
@@ -218,6 +218,59 @@ A Crash Course on Vertical Blank Interrupts
 
 A Crash Course on Fine Scrolling
 ---------------------------------------
+
+
+
+First Display List With Scrolling
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Here's the same example used in the :ref:`course vertical scrolling
+<course_no_scroll_dlist>` section, except now the vertical scrolling bit has
+been set on the display list instructions for the scrolling region of lines A
+through V:
+
+.. figure:: fine_vscroll_dlist.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/fine_vscroll_dlist.s">fine_vscroll_dlist.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_vscroll_dlist.xex">fine_vscroll_dlist.xex</a></li>
+   </ul>
+
+Note that the ``VSCROL`` hardware register is set to zero. Here's the display list:
+
+.. code-block::
+
+   ; Simple display list to be used as course scrolling comparison
+   dlist_course_mode4
+           .byte $70,$70,$70       ; 24 blank lines
+           .byte $44,$00,$80       ; Mode 4 + LMS + address
+           .byte $64,$00,$80       ; Mode 4 + VSCROLL + LMS + address
+           .byte $24,$24,$24,$24,$24,$24,$24,$24   ; 21 more Mode 4 + VSCROLL lines
+           .byte $24,$24,$24,$24,$24,$24,$24,$24
+           .byte $24,$24,$24,$24,$24
+           .byte $42,<static_text, >static_text ; 2 Mode 2 lines + LMS + address
+           .byte $2
+           .byte $41,<dlist_course_mode4,>dlist_course_mode4 ; JVB ends display list
+
+Notice the first line of the mode 2 region at the bottom seems to be missing!
+Actually, it is still there, or more correctly: one scan line of it is still
+there.
+
+ANTIC uses the first scan line that doesn't have the vertical scrolling bit set
+as a sort-of *buffer zone* to the scrolling region.
+
+Here's the same example, except the ``VSCROL`` register is set to 4:
+
+.. figure:: fine_vscroll_4.png
+   :align: center
+   :width: 90%
+
+where it shows that line A has been scrolled by 4 scan lines **and** the first
+ANTIC mode 2 line now shows 4 of its 8 scan lines.
 
 
 
