@@ -59,7 +59,7 @@ fillscreen_parallax
 
 
 ;
-; fill 32 lines with test pattern
+; fill two groups of lines, each group 40 bytes each of A-Z
 ;
 fillscreen_course_test_pattern
         ldy #0
@@ -115,18 +115,58 @@ fillscreen_course_test_pattern
         sta $83c0,y
         adc #1
         sta $83e8,y
+        adc #7
+        sta $8410,y
         adc #1
-        sta $8400,y
+        sta $8438,y
         adc #1
-        sta $8428,y
+        sta $8460,y
         adc #1
-        sta $8450,y
+        sta $8488,y
         adc #1
-        sta $8478,y
+        sta $84b0,y
         adc #1
-        sta $84a0,y
+        sta $84d8,y
         adc #1
-        sta $84c8,y
+        sta $8500,y
+        adc #1
+        sta $8528,y
+        adc #1
+        sta $8550,y
+        adc #1
+        sta $8578,y
+        adc #1
+        sta $85a0,y
+        adc #1
+        sta $85c8,y
+        adc #1
+        sta $85f0,y
+        adc #1
+        sta $8618,y
+        adc #1
+        sta $8640,y
+        adc #1
+        sta $8668,y
+        adc #1
+        sta $8690,y
+        adc #1
+        sta $86b8,y
+        adc #1
+        sta $86e0,y
+        adc #1
+        sta $8708,y
+        adc #1
+        sta $8730,y
+        adc #1
+        sta $8758,y
+        adc #1
+        sta $8780,y
+        adc #1
+        sta $87a8,y
+        adc #1
+        sta $87d0,y
+        adc #1
+        sta $87f8,y
         iny
         cpy #40
         bcs ?done
