@@ -26,8 +26,8 @@ this tutorial, the version built-in to `Omnivore
 
 
 
-A Crash Course on Display Lists
---------------------------------
+A (Small) Crash Course on Display Lists
+--------------------------------------------
 
 Display lists are an important topic for scrolling, because certain flags on
 display list commands tell ANTIC which lines get scrolled and which are left
@@ -58,16 +58,16 @@ The 4 flags are:
  * VSCROLL (``$20``): enable vertical scrolling for this mode line
  * HSCROLL (``$10``): enable horizontal scrolling for this mode line
 
-The 14 available graphics modes are encoded into low 4 bits using values as shown
-in this table:
+The 14 available graphics modes are encoded into low 4 bits using values as
+shown in this table:
 
 .. csv-table::
 
     Mode, Decimal, BASIC Mode,  Description, Scan Lines, Type, Colors
     2, 02,    0,     40 x 24,   8, text, 2
     3, 03,    n/a,   40 x 19,  10, text, 2
-    4, 04,    n/a,   40 x 24,   8, text, 4
-    5, 05,    n/a,   40 x 12,  16, text, 4
+    4, 04,    n/a,   40 x 24,   8, text, 5
+    5, 05,    n/a,   40 x 12,  16, text, 5
     6, 06,    1,     20 x 24,   8, text, 5
     7, 07,    2,     20 x 12,  16, text, 5
     8, 08,    3,     40 x 24,   8, bitmap, 4
@@ -77,10 +77,9 @@ in this table:
     C, 12,    n/a,  160 x 192,  1, bitmap, 2
     D, 13,    7,    160 x 96,   2, bitmap, 4
     E, 14,    n/a,  160 x 192,  1, bitmap, 4
-    F, 15,    8,    320 x 192,  1, bitmap*, 2
+    F, 15,    8,    320 x 192,  1, bitmap, 2
 
-*mode F is also used as the basis for the GTIA modes (BASIC Graphics modes 9,
-10, & 11), but this is a topic outside the scope of this tutorial.
+.. note:: The important modes for scrolling are the text modes, and for games in particular ANTIC modes 4 and 5. Any modes can be scrolled horizontally, and modes taller than 1 scan line can also be scrolled vertically, but the combination of memory usage and large height of the text modes make them ideal candidates for scrolling games.
 
 Blank lines are encoded as a mode value of zero, the bits 6, 5, and 4 taking
 the meaning of the number of blank lines rather than LMS, VSCROLL, and
@@ -128,27 +127,92 @@ here and the screen drawing will commence using the new display list.
    * https://www.atariarchives.org/mapping/appendix8.php
 
 
-A Crash Course on Vertical Blank Interrupts
-------------------------------------------------
-
-
 A Crash Course on Course Scrolling
 ---------------------------------------
+
+Course scrolling, that is: scrolling with blocky jumps, can be accomplished
+without any use of the hardware scrolling registers. In fact, course scrolling
+falls out as a side-effect of the ``LMS`` bit on display list commands. Being
+able to reposition the memory pointer for any display list instruction means
+that you can tell ANTIC where to look in memory when it draws a scan line.
+Simply by moving the address pointer to a different location, you can change
+the display.
+
+First we will look at vertical course scrolling which is the simpler case than
+horizontal course scrolling. After examining horizontal course scrolling, we
+will combine the two which will give us unrestricted 2D scrolling.
+
 
 
 Vertical Course Scrolling
 ------------------------------------------
 
+Course scrolling vertically is moving the playfield data such that the user
+sees a new line of information on the top of the screen while the line that was
+previously on the on the bottom of the screen moves off, and all other visible
+lines move down one line. (Or vice-versa: new data appears on the bottom while
+a line is removed from the top.) This direction is simpler than horizontal
+because only a single ``LMS`` instruction needs to be updated, so that is where
+we will start.
+
+A Starting Point
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Here is a display list without any scrolling, and just a single ``LMS``
+instruction on the first mode 4 line to tell ANTIC where to look in memory for
+that first line. Subsequent mode 4 lines follow immediately after in memory:
+ANTIC will use memory contiguously until told otherwise by another ``LMS``
+instruction.
+
+.. figure:: course_no_scroll.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_no_scroll.s">course_no_scroll.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_no_scroll.xex">course_no_scroll.xex</a></li>
+   </ul>
+
+All this test program does is create a display list and show a simple test
+pattern. There is nothing special about this display list, no scrolling bits
+set on any display list instructions; only the ``LMS`` instruction to set the
+initial memory location for the 22 lines of ANTIC Mode 4, and the two lines of
+ANTIC mode 2 at the bottom. (These two lines will be used as a comparison when
+we add scrolling to this display list in the next section.)
+
+.. code-block::
+
+   ; Simple display list to be used as course scrolling comparison
+   dlist_course_mode4
+           .byte $70,$70,$70       ; 24 blank lines
+           .byte $44,$00,$80       ; Mode 4 + LMS + address
+           .byte 4,4,4,4,4,4,4,4   ; 21 more Mode 4 lines
+           .byte 4,4,4,4,4,4,4,4
+           .byte 4,4,4,4,4
+           .byte $42,<static_text, >static_text ; 2 Mode 2 lines + LMS + address
+           .byte $2
+           .byte $41,<dlist_course_mode4,>dlist_course_mode4 ; JVB ends display list
 
 
 
 Horizontal Course Scrolling
 ------------------------------------------
 
+Horizontal course scrolling is only slightly more complicated than vertical
+course scrolling because multiple ``LMS`` addresses need to be updated.
+
 
 
 Combined Horizontal and Vertical Course Scrolling
 --------------------------------------------------
+
+
+
+
+A Crash Course on Vertical Blank Interrupts
+------------------------------------------------
 
 
 

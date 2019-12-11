@@ -18,36 +18,16 @@ init
 forever
         jmp forever
 
-
-; one page per line, used as comparison to horizontal scrolling. Start visible
-; region just like scrolling version
+; Simple display list to be used as course scrolling comparison
 dlist_course_mode4
-        .byte $70,$70,$70       ; region A: no scrolling
-        .byte $44,$00,$80
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte 4
-        .byte $42,<static_text, >static_text
+        .byte $70,$70,$70       ; 24 blank lines
+        .byte $44,$00,$80       ; Mode 4 + LMS + address
+        .byte 4,4,4,4,4,4,4,4   ; 21 more Mode 4 lines
+        .byte 4,4,4,4,4,4,4,4
+        .byte 4,4,4,4,4
+        .byte $42,<static_text, >static_text ; 2 Mode 2 lines + LMS + address
         .byte $2
-        .byte $41,<dlist_course_mode4,>dlist_course_mode4
+        .byte $41,<dlist_course_mode4,>dlist_course_mode4 ; JVB ends display list
 
         ;             0123456789012345678901234567890123456789
 static_text
