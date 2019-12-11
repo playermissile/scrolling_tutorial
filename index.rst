@@ -163,6 +163,19 @@ ANTIC mode 2 at the bottom for non-scrolling status lines.
            .byte $2
            .byte $41,<dlist_course_mode4,>dlist_course_mode4 ; JVB ends display list
 
+
+Memory Layout
+~~~~~~~~~~~~~~~~~~~~
+
+To move a viewport window up or down over a larger map doesn't require any
+difference in memory layout for the screen data, just more of it.
+
+.. figure:: memory_layout_vertical.png
+   :align: center
+   :width: 50%
+
+
+
 Course Scrolling Down
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -276,9 +289,36 @@ course scrolling because multiple ``LMS`` addresses need to be updated.
 
 
 
+Memory Layout
+~~~~~~~~~~~~~~~~~~~~
+
+Scrolling left and right does present a different problem, because if only the
+first ``LMS`` address is updated, a subsequent line will use memory immediately
+following the previous line, resulting in a snake-like movement that doesn't
+resemble scrolling.
+
+To remedy this, the memory should be thought of as individual horizontal
+strips, which for ANTIC to process correctly requires ``LMS`` addresses on
+every display list line in the scrolling region.
+
+.. figure:: memory_layout_horizontal.png
+   :align: center
+   :width: 80%
+
+
+
 Combined Horizontal and Vertical Course Scrolling
 --------------------------------------------------
 
+
+Memory Layout
+~~~~~~~~~~~~~~~~~~~~
+
+Perhaps not surprisingly, combining horizontal and vertical scrolling requires combining the memory layout ideas: wide horizontal lines coupled with lines above and below the viewport.
+
+.. figure:: memory_layout_2d.png
+   :align: center
+   :width: 80%
 
 
 
