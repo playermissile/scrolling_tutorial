@@ -449,22 +449,42 @@ The display list is exactly the same as in the scrolling left example.
 Combined Horizontal and Vertical Course Scrolling
 --------------------------------------------------
 
-Horizontal and vertical course scrolling is possible with only a very little
-more effort than horizontal course scrolling. Since horizontal course scrolling
-requires changing ``LMS`` addresses on every display list line anyway, pointing
-that address to memory that makes the viewport move up or down as well as left
-and right is all that it takes.
+Simultaneous horizontal and vertical course scrolling is possible with very
+little additional effort over horizontal course scrolling alone.
+
+Adding vertical scrolling to a display list that uses ``LMS`` addresses for
+every line means that, unlike the simple vertical scrolling that used a single
+``LMS`` address for the whole screen, *every* display list line in the
+scrolling region will have to be modified to point to a new vertical location
+in the memory layout.
 
 Memory Layout
 ~~~~~~~~~~~~~~~~~~~~
 
-Perhaps not surprisingly, combining horizontal and vertical scrolling requires combining the memory layout ideas: wide horizontal lines coupled with lines above and below the viewport.
+Combining horizontal and vertical scrolling requires combining the memory
+layout ideas: wide horizontal lines coupled with lines above and below the
+viewport.
 
 .. figure:: memory_layout_2d.png
    :align: center
    :width: 80%
 
+As in the horizontal scrolling examples above, the combined scrolling examples
+will also use the page-per-line memory layout: 256 bytes per line.
 
+Horizontal course scrolling requires an ``LMS`` address for every display list
+line in the scrolling region, and using this memory layout means that the low
+byte of that address is modified for every scroll. The high byte is unmodified.
+
+Vertical course scrolling using this display list and memory layout is
+convenient because the vertical position of the viewport is solely dependent on
+the high byte of the memory address; the low byte is unchanged.
+
+This memory layout simplifies combined scrolling because it decouples the
+vertical position and horizontal position! Combined scrolling is then reduced
+to changing the high byte of each ``LMS`` address to reflect the vertical
+location of the viewport, and changing the low byte to set the horizontal
+location.
 
 
 Vertical Fine Scrolling
