@@ -16,7 +16,10 @@
    version="1.1"
    id="svg8"
    inkscape:version="0.92.2 5c3e80d, 2017-08-06"
-   sodipodi:docname="memory_layout_vertical.svg">
+   sodipodi:docname="memory_layout_vertical.svg"
+   inkscape:export-filename="/home/rob/bitmap.png"
+   inkscape:export-xdpi="297.99988"
+   inkscape:export-ydpi="297.99988">
   <defs
      id="defs2">
     <marker
@@ -92,7 +95,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
      inkscape:cx="214.36723"
-     inkscape:cy="814.03429"
+     inkscape:cy="713.01904"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false" />

@@ -3,10 +3,8 @@
 .. highlight:: ca65
 
 
-A Crash Course on Fine Scrolling
+Atari 8-bit Fine Scrolling Tutorial
 =================================================================
-
-.. centered:: **Atari 8-bit Fine Scrolling: A Tutorial**
 
 **Revision 0, updated 5 Dec 2019**
 
@@ -75,7 +73,7 @@ text modes make them ideal candidates for scrolling games.
    * https://www.atariarchives.org/mapping/appendix8.php
 
 
-A Crash Course on Course Scrolling
+Course Scrolling
 ---------------------------------------
 
 Scrolling means the display screen is a *window* on a larger map, that the user
@@ -101,14 +99,21 @@ Definitions
 It helps to set up what we mean by the directions, because depending on your
 perspective, **scrolling up** and **scrolling down** (and similarly **left**
 and **right**) could mean exactly opposite things. Are the directions referring
-to which way the data is moving on the screen? Or which way the playfield
-window is moving over the larger map of data?
+to which way the data is moving on the screen? Or which way the viewport is
+moving over the larger screen memory layout?
 
-The convention is to refer to the direction as the way the playfield window is
-moving. So, **scrolling up** means the playfield window is moving up over the
-larger map, but what that means in terms of what's displayed is that new data
-is appearing at the top of the screen, pushing everything else down the screen
-and old data is vanishing off the bottom of the screen.
+The convention is to refer to the direction as the way the viewport is moving.
+So, **scrolling up** means the viewport is moving up over the screen memory
+layout, but what that means in terms of what's displayed is that new data is
+appearing at the top of the screen, pushing everything else down the screen and
+old data is vanishing off the bottom of the screen.
+
+Because there are so many types of lines, the word line becomes ambiguous without clarification. There are:
+
+ * scan lines on screen
+ * number of scan lines in a character cell
+ * lines of characters in the viewport
+ * lines of characters in the screen memory layout
 
 
 
@@ -305,11 +310,149 @@ every display list line in the scrolling region.
    :align: center
    :width: 80%
 
+For this tutorial, the horizontal memory layout is going to use an entire page
+of memory (256 bytes, so 256 characters) per line of screen memory. At the cost
+of some RAM, this will simplify our ``LMS`` modifications in that only the low
+byte will need to be modified in the case of pure horizontal scrolling, and
+only the high byte needs to change in the case of pure vertical scrolling.
+
+This is a tradeoff that is good for speed and reduced code complexity, but if
+your memory constraints outweigh your speed requirements, this may not be a
+tradeoff you are willing to make. The byte width of your screen memory layout
+is entirely arbitrary; the ``LMS`` calculations will just be more complicated
+and slower with other widths, but are perfectly acceptable.
+
+
+
+Course Scrolling Left
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Scrolling left means new data is appearing on the left of the screen, pushing
+data currently on the screen to the right and finally disappearing off the
+right side of the screen. Every 16 bytes, the memory layout has been stamped
+with the hex addresses of the screen memory so you can tell where the viewport
+has scrolled to.
+
+.. figure:: course_scroll_left.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_scroll_left.s">course_scroll_left.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_scroll_left.xex">course_scroll_left.xex</a></li>
+   </ul>
+
+Because each ``LMS`` address in the scrolling region and the one-line buffer
+zone must be updated, a loop is used here. Moving to the left means moving
+lower in memory, in this case: one byte at a time:
+
+.. code-block::
+
+   ; move viewport one byte to the left by pointing each display list start
+   ; address to one byte lower in memory
+   course_scroll_left
+           ldy #22         ; 22 lines to modify
+           ldx #4          ; 4th byte after start of display list is low byte of address
+   ?loop   dec dlist_hscroll_mode4,x
+           inx             ; skip to next low byte which is 3 bytes away
+           inx
+           inx
+           dey
+           bne ?loop
+           rts
+
+There's no bounds checking in this example, so if you let it run long enough it
+will display  low byte address moves from ``$00`` to
+``$ff``. "Defender"-style wrapping, to make it appear like there is no start or
+end, takes some special preparations and will be discussed below.
+
+Here's the display list:
+
+.. code-block::
+
+   ; one page per line, used for horizontal scrolling. Start visible region
+   ; in middle of each page so it can scroll either right or left immediately
+   ; without having to check for a border
+   dlist_hscroll_mode4
+           .byte $70,$70,$70
+           .byte $54,$70,$80       ; first line of scrolling region
+           .byte $54,$70,$81
+           .byte $54,$70,$82
+           .byte $54,$70,$83
+           .byte $54,$70,$84
+           .byte $54,$70,$85
+           .byte $54,$70,$86
+           .byte $54,$70,$87
+           .byte $54,$70,$88
+           .byte $54,$70,$89
+           .byte $54,$70,$8a
+           .byte $54,$70,$8b
+           .byte $54,$70,$8c
+           .byte $54,$70,$8d
+           .byte $54,$70,$8e
+           .byte $54,$70,$8f
+           .byte $54,$70,$90
+           .byte $54,$70,$91
+           .byte $54,$70,$92
+           .byte $54,$70,$93
+           .byte $54,$70,$94
+           .byte $54,$70,$95       ; last line with scroll bit set
+           .byte $42,<hscroll_static_text, >hscroll_static_text ; 2 Mode 2 lines + LMS + address
+           .byte $2
+           .byte $41,<dlist_hscroll_mode4,>dlist_hscroll_mode4 ; JVB ends display list
+
+Course Scrolling Right
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Scrolling right means new data is appearing on the right of the screen, pushing
+data currently on the screen to the left and finally disappearing off the
+left side of the screen. 
+
+.. figure:: course_scroll_right.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_scroll_right.s">course_scroll_right.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_scroll_right.xex">course_scroll_right.xex</a></li>
+   </ul>
+
+The code for this is exactly analogous to scrolling left, except we are
+incrementing the ``LMS`` pointer, moving one byte higher in memory to push the
+viewport to the right.
+
+.. code-block::
+
+   ; move viewport one byte to the right by pointing each display list start
+   ; address to one byte higher in memory
+   course_scroll_right
+           ldy #22         ; 22 lines to modify
+           ldx #4          ; 4th byte after start of display list is low byte of address
+   ?loop   inc dlist_hscroll_mode4,x
+           inx             ; skip to next low byte which is 3 bytes away
+           inx
+           inx
+           dey
+           bne ?loop
+           rts
+
+The display list is exactly the same as in the scrolling left example.
+
+
 
 
 Combined Horizontal and Vertical Course Scrolling
 --------------------------------------------------
 
+Horizontal and vertical course scrolling is possible with only a very little
+more effort than horizontal course scrolling. Since horizontal course scrolling
+requires changing ``LMS`` addresses on every display list line anyway, pointing
+that address to memory that makes the viewport move up or down as well as left
+and right is all that it takes.
 
 Memory Layout
 ~~~~~~~~~~~~~~~~~~~~
@@ -323,7 +466,7 @@ Perhaps not surprisingly, combining horizontal and vertical scrolling requires c
 
 
 
-A Crash Course on Vertical Fine Scrolling
+Vertical Fine Scrolling
 -----------------------------------------------
 
 Vertical fine scrolling is controlled by ANTIC's ``VSCROL`` hardware register.
@@ -485,13 +628,13 @@ middle of drawing the screen.
 
 
 
-A Crash Course on Horizontal Fine Scrolling
+Horizontal Fine Scrolling
 ------------------------------------------------------
 
 
 
 
-A Crash Course on Combined Fine Scrolling
+Combined Fine Scrolling
 --------------------------------------------------
 
 
