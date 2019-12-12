@@ -487,6 +487,147 @@ location of the viewport, and changing the low byte to set the horizontal
 location.
 
 
+Course Scrolling Example
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This example scrolls the viewport simultaneously in the vertical and horizontal
+directions using the techniques described above.
+
+.. figure:: course_scroll_2d.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_scroll_2d.s">course_scroll_2d.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_scroll_2d.xex">course_scroll_2d.xex</a></li>
+   </ul>
+
+The display list is unchanged from the horizontal course scrolling examples.
+
+There are several differences in code from the horizontal scrolling version.
+First some variables are added to track the direction at which the viewport is
+moving (and they are initialized):
+
+.. code-block::
+
+   horz_dir = $80  ; 1 = right, $ff = left
+   vert_dir = $81  ; 1 = down, $ff = up
+
+           lda #$ff
+           sta horz_dir
+           lda #1
+           sta vert_dir
+
+We will need to track where the viewport is on screen, and instead of creating
+extra variables for it, we can realize that the display list itself will tell
+us where the viewport is. Choosing the reference point to be the upper left
+corder of the viewport window means that the very first ``LMS`` instruction in
+the display list is exactly our reference point. The low byte of the ``LMS``
+address is the horizontal position and the high byte is the vertical.
+
+.. code-block::
+
+    ; representative values for vertical and horizontal scrolling: the pointers
+    ; to the display list LMS addresses themselves
+    horz_ref = dlist_lms_mode4 + 4
+    vert_ref = dlist_lms_mode4 + 5
+
+The code that moves the viewport horizontally checks the horizontal direction
+before determining how to changing the low bytes of the ``LMS`` addresses:
+
+.. code-block::
+
+   ; move viewport one byte to the left/right by pointing each display list
+   ; address to one lower/byte higher in memory (i.e. changing low byte)
+   course_scroll_horz
+           ldy #22         ; 22 lines to modify
+           ldx #0
+           lda horz_dir
+           bmi ?left
+   ?right  inc horz_ref,x  ; low bytes of display list referenced at this addr
+           inx             ; skip to next low byte which is 3 bytes away
+           inx
+           inx
+           dey
+           bne ?right
+           rts
+   
+   ?left   dec horz_ref,x  ; low bytes of display list referenced at this addr
+           inx             ; skip to next low byte which is 3 bytes away
+           inx
+           inx
+           dey
+           bne ?left
+           rts
+
+Vertical scrolling changes the high bytes of the ``LMS`` addresses lines. The
+code is very similar to the above:
+
+.. code-block::
+
+   ; move viewport one line up/down by pointing each display list address
+   ; one *page* lower/byte higher in memory (i.e. changing high byte)
+   course_scroll_vert
+           ldy #22         ; 22 lines to modify
+           ldx #0
+           lda vert_dir
+           bmi ?up
+   ?down   inc vert_ref,x  ; high bytes of display list referenced at this addr
+           inx             ; skip to next high byte which is 3 bytes away
+           inx
+           inx
+           dey
+           bne ?down
+           rts
+   
+   ?up     dec vert_ref,x  ; high bytes of display list referenced at this addr
+           inx             ; skip to next high byte which is 3 bytes away
+           inx
+           inx
+           dey
+           bne ?up
+           rts
+
+Some boundary checking is added referencing some constants describing the
+limits of the memory layout, and the viewport bounces off the sides as if it
+were a pong game.
+
+.. code-block::
+
+   horz_min = 0    ; horizontal lower bound
+   horz_max = 255-44 ; horizontal upper bound is page width, less some extra to prevent unintentional wraparound
+   vert_min = $80  ; page $80 is first line in memory region
+   vert_max = $80+52-22 ; 52 lines high and 22 visible at a time
+
+           ; check if horizontal direction needs updating
+           lda horz_ref    ; reference horizontal position
+           cmp #horz_max   ; too far to the right?
+           bcc ?ck_left
+           lda #$ff        ; yep, start scrolling left
+           sta horz_dir
+           bne ?ck_down
+   ?ck_left cmp #horz_min  ; at left boundary?
+           bne ?ck_down
+           lda #1          ; yep, start scrolling right
+           sta horz_dir
+   
+           ; check if vertical direction needs updating
+   ?ck_down lda vert_ref   ; reference vertical position
+           cmp #vert_max   ; too far to down?
+           bcc ?ck_up
+           lda #$ff        ; yep, start scrolling up
+           sta vert_dir
+           bne ?scroll
+   ?ck_up cmp #vert_min+1  ; at top boundary?
+           bcs ?scroll
+           lda #1          ; yep, start scrolling down
+           sta vert_dir
+
+
+
+
 Vertical Fine Scrolling
 -----------------------------------------------
 

@@ -175,7 +175,7 @@ fillscreen_course_test_pattern
 
 
 ;
-; fill 32 pages with test pattern, A-Z vertically and checkerboard
+; fill 56 pages with test pattern, A-Z vertically and checkerboard
 ; colors every 16 chars horizontally so scrolling movement will be
 ; visible.
 ;
@@ -237,7 +237,7 @@ fillscreen_test_pattern
         sta $9800,y
         adc #1
         sta $9900,y
-        adc #1
+        adc #7
         sta $9a00,y
         adc #1
         sta $9b00,y
@@ -249,6 +249,54 @@ fillscreen_test_pattern
         sta $9e00,y
         adc #1
         sta $9f00,y
+        adc #1
+        sta $a000,y
+        adc #1
+        sta $a100,y
+        adc #1
+        sta $a200,y
+        adc #1
+        sta $a300,y
+        adc #1
+        sta $a400,y
+        adc #1
+        sta $a500,y
+        adc #1
+        sta $a600,y
+        adc #1
+        sta $a700,y
+        adc #1
+        sta $a800,y
+        adc #1
+        sta $a900,y
+        adc #1
+        sta $aa00,y
+        adc #1
+        sta $ab00,y
+        adc #1
+        sta $ac00,y
+        adc #1
+        sta $ad00,y
+        adc #1
+        sta $ae00,y
+        adc #1
+        sta $af00,y
+        adc #1
+        sta $b000,y
+        adc #1
+        sta $b100,y
+        adc #1
+        sta $b200,y
+        adc #1
+        sta $b300,y
+        adc #1
+        sta $b400,y
+        adc #1
+        sta $b500,y
+        adc #1
+        sta $b600,y
+        adc #1
+        sta $b700,y
         iny
         beq ?done
         jmp ?loop
@@ -353,6 +401,14 @@ fillscreen_scroll
         bne ?loop
         rts
 
+;
+; display lists
+;
+; NOTE: start display lists on a page boundary to avoid the possibility
+; that it might be split over a 4K boundary
+
+        *= (* & $ff00) + 256 ; next page boundary
+
 ; one page per line, used for course scrolling. Start visible region
 ; in middle of each page so it can scroll either right or left immediately
 ; without having to check for a border
@@ -389,6 +445,8 @@ footer_text
         .sbyte +$80, " ANTIC MODE 2, NOT SCROLLED, FIRST LINE "
         .sbyte       " ANTIC MODE 2, NOT SCROLLED, SECOND LINE"
 
+
+        *= (* & $ff00) + 256 ; next page boundary
 
 ; one page per line, used for horizontal scrolling. Start visible region
 ; in middle of each page so it can scroll either right or left immediately
