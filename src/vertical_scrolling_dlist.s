@@ -6,9 +6,9 @@
 init
         jsr init_font
 
-        lda #<dlist_lms_mode4
+        lda #<dlist_vscroll_lms_mode4
         sta SDLSTL
-        lda #>dlist_lms_mode4
+        lda #>dlist_vscroll_lms_mode4
         sta SDLSTL+1
         jsr fillscreen_test_pattern
         lda #$80
@@ -23,7 +23,7 @@ forever
 
 ; one page per line, used as comparison to horizontal scrolling. Start visible
 ; region just like scrolling version
-dlist_lms_mode4
+dlist_vscroll_lms_mode4
         .byte $70,$70,$70       ; region A: no scrolling
         .byte $64,$70,$80
         .byte $64,$70,$81
@@ -49,7 +49,7 @@ dlist_lms_mode4
         .byte $64,$70,$95
         .byte $42,<static_text, >static_text
         .byte $2
-        .byte $41,<dlist_lms_mode4,>dlist_lms_mode4
+        .byte $41,<dlist_vscroll_lms_mode4,>dlist_vscroll_lms_mode4
 
         ;       0123456789012345678901234567890123456789
 static_text

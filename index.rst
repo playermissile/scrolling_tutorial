@@ -320,7 +320,8 @@ This is a tradeoff that is good for speed and reduced code complexity, but if
 your memory constraints outweigh your speed requirements, this may not be a
 tradeoff you are willing to make. The byte width of your screen memory layout
 is entirely arbitrary; the ``LMS`` calculations will just be more complicated
-and slower with other widths, but are perfectly acceptable.
+(and therefore slower) with widths where you must do arithmetic to calculate
+the addresses.
 
 
 
@@ -355,7 +356,7 @@ lower in memory, in this case: one byte at a time:
    course_scroll_left
            ldy #22         ; 22 lines to modify
            ldx #4          ; 4th byte after start of display list is low byte of address
-   ?loop   dec dlist_hscroll_mode4,x
+   ?loop   dec dlist_lms_mode4,x
            inx             ; skip to next low byte which is 3 bytes away
            inx
            inx
@@ -372,36 +373,36 @@ Here's the display list:
 
 .. code-block::
 
-   ; one page per line, used for horizontal scrolling. Start visible region
+   ; one page per line, used for course scrolling. Start visible region
    ; in middle of each page so it can scroll either right or left immediately
    ; without having to check for a border
-   dlist_hscroll_mode4
+   dlist_lms_mode4
            .byte $70,$70,$70
-           .byte $54,$70,$80       ; first line of scrolling region
-           .byte $54,$70,$81
-           .byte $54,$70,$82
-           .byte $54,$70,$83
-           .byte $54,$70,$84
-           .byte $54,$70,$85
-           .byte $54,$70,$86
-           .byte $54,$70,$87
-           .byte $54,$70,$88
-           .byte $54,$70,$89
-           .byte $54,$70,$8a
-           .byte $54,$70,$8b
-           .byte $54,$70,$8c
-           .byte $54,$70,$8d
-           .byte $54,$70,$8e
-           .byte $54,$70,$8f
-           .byte $54,$70,$90
-           .byte $54,$70,$91
-           .byte $54,$70,$92
-           .byte $54,$70,$93
-           .byte $54,$70,$94
-           .byte $54,$70,$95       ; last line with scroll bit set
+           .byte $44,$70,$80       ; first line of scrolling region
+           .byte $44,$70,$81
+           .byte $44,$70,$82
+           .byte $44,$70,$83
+           .byte $44,$70,$84
+           .byte $44,$70,$85
+           .byte $44,$70,$86
+           .byte $44,$70,$87
+           .byte $44,$70,$88
+           .byte $44,$70,$89
+           .byte $44,$70,$8a
+           .byte $44,$70,$8b
+           .byte $44,$70,$8c
+           .byte $44,$70,$8d
+           .byte $44,$70,$8e
+           .byte $44,$70,$8f
+           .byte $44,$70,$90
+           .byte $44,$70,$91
+           .byte $44,$70,$92
+           .byte $44,$70,$93
+           .byte $44,$70,$94
+           .byte $44,$70,$95       ; last line with scroll bit set
            .byte $42,<hscroll_static_text, >hscroll_static_text ; 2 Mode 2 lines + LMS + address
            .byte $2
-           .byte $41,<dlist_hscroll_mode4,>dlist_hscroll_mode4 ; JVB ends display list
+           .byte $41,<dlist_lms_mode4,>dlist_lms_mode4 ; JVB ends display list
 
 Course Scrolling Right
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -432,7 +433,7 @@ viewport to the right.
    course_scroll_right
            ldy #22         ; 22 lines to modify
            ldx #4          ; 4th byte after start of display list is low byte of address
-   ?loop   inc dlist_hscroll_mode4,x
+   ?loop   inc dlist_lms_mode4,x
            inx             ; skip to next low byte which is 3 bytes away
            inx
            inx

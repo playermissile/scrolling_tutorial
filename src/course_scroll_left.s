@@ -6,9 +6,9 @@
 init
         jsr init_font
 
-        lda #<dlist_hscroll_mode4
+        lda #<dlist_lms_mode4
         sta SDLSTL
-        lda #>dlist_hscroll_mode4
+        lda #>dlist_lms_mode4
         sta SDLSTL+1
         jsr fillscreen_test_pattern
         lda #$80
@@ -33,7 +33,7 @@ loop
 course_scroll_left
         ldy #22         ; 22 lines to modify
         ldx #4          ; 4th byte after start of display list is low byte of address
-?loop   dec dlist_hscroll_mode4,x
+?loop   dec dlist_lms_mode4,x
         inx             ; skip to next low byte which is 3 bytes away
         inx
         inx
