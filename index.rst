@@ -3,17 +3,27 @@
 .. highlight:: ca65
 
 
-Atari 8-bit Fine Scrolling Tutorial
-=================================================================
+Atari 8-bit Fine Scrolling: An (In)Complete(ish) Tutorial
+======================================================================
 
-**Revision 0, updated 5 Dec 2019**
+**Revision 1, updated 12 Dec 2019**
 
 This is a tutorial on fine scrolling for the Atari 8-bit series of computers.
 In a nutshell, the ANTIC coprocessor provides 2D hardware scrolling at very
 little computational expense.
 
-This is advanced programming tutorial in the sense that the examples will be
-written in assembly language, so the assumption will be that you are
+Scrolling means the display screen is a window or *viewport* on a larger map.
+At any moment in time, the user is looking at only a small portion of the
+overall area, and this viewport can be moved around. The Atari hardware
+provides for both course scrolling (that is, moving the viewport at byte or
+character boundaries) and fine scrolling (moving with higher resolution: scan
+lines vertically and color clocks horizontally). Fine scrolling on the Atari is
+built upon course scrolling, so we will first examine the latter before make
+the scrolling smooth by tackling the former.
+
+No prior knowledge of scrolling is necessary before reading this tutorial.
+However, this is advanced programming tutorial in the sense that the examples
+are written in assembly language, so the assumption will be that you are
 comfortable with that. All the examples here are assembled using the
 MAC/65-compatible assembler `ATasm
 <https://atari.miribilist.com/atasm/index.html>`_ (and more specifically to
@@ -69,24 +79,22 @@ text modes make them ideal candidates for scrolling games.
 
    More resources about display lists are available:
 
-   * https://www.atariarchives.org/mapping/memorymap.php#560,561
-   * https://www.atariarchives.org/mapping/appendix8.php
+   * The :ref:`Display Lists section <display_lists>` of my DLI tutorial
+   * The `SDLSTL memory location <https://www.atariarchives.org/mapping/memorymap.php#560,561>`_ in Mapping the Atari
+   * `Appendix 8 <https://www.atariarchives.org/mapping/appendix8.php>`_ of Mapping the Atari
+   * `De Re Atari, Chapter 2 <https://www.atariarchives.org/dere/chapt02.php>`_
 
 
 Course Scrolling
 ---------------------------------------
 
-Scrolling means the display screen is a *window* on a larger map, that the user
-is looking at only a small portion of the overall area, and this window can be
-moved around.
-
-Course scrolling, that is: scrolling with blocky jumps, can be accomplished
-without any use of the hardware scrolling registers. In fact, course scrolling
-falls out as a side-effect of the ``LMS`` bit on display list commands. Being
-able to reposition the memory pointer for any display list instruction means
-that you can tell ANTIC where to look in memory when it draws a scan line.
-Simply by moving the address pointer to a different location, you can change
-the display.
+Course scrolling, that is: scrolling at character or byte boundaries (in what
+appears on screen as blocky jumps), can be accomplished without any use of the
+hardware scrolling registers. In fact, course scrolling falls out as a side-
+effect of the ``LMS`` bit on display list commands. Being able to reposition
+the memory pointer for any display list instruction means that you can tell
+ANTIC where to look in memory when it draws a scan line. Simply by moving the
+address pointer to a different location, you can change the display.
 
 First we will look at vertical course scrolling which is the simpler case than
 horizontal course scrolling. After examining horizontal course scrolling, we
@@ -446,7 +454,7 @@ The display list is exactly the same as in the scrolling left example.
 
 
 
-Combined Horizontal and Vertical Course Scrolling
+Combined Course Scrolling
 --------------------------------------------------
 
 Simultaneous horizontal and vertical course scrolling is possible with very
@@ -781,12 +789,23 @@ Continuous Fine Scrolling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-This technique of waiting until the the vertical blank has *just* passed will
-ensure that the display list address isn't changed while ANTIC isn't in the
-middle of drawing the screen.
 
-.. note:: Strictly speaking, this isn't necessary because ANTIC will not go back and re-read the LMS address of a previously processed display list command. Changing the LMS in the middle screen in this case would only have the effect
 
+Interlude: Vertical Blank Interrupts
+------------------------------------------------
+
+The technique we have been using where we waiting until the the vertical blank
+has *just* passed as the trigger to begin our modifications to ``LMS``
+addresses and the scrolling registers is not going to be sufficient when we
+move to horizontal scrolling.
+
+For vertical scrolling by itself, it *is* largely sufficient because ANTIC will
+not go back and re-read the LMS address of a previously processed display list
+command. Changing the ``LMS`` while ANTIC is in the middle screen would only
+have the effect of delaying the update by a frame.  However, changing the
+hardware ``VSCROL`` register in the middle of a frame will have immediate
+effect, and for more complicated scrolling examples in subsequent sections,
+changes will happen in the vertical blank.
 
 
 
@@ -799,10 +818,6 @@ Horizontal Fine Scrolling
 Combined Fine Scrolling
 --------------------------------------------------
 
-
-
-Interlude: Vertical Blank Interrupts
-------------------------------------------------
 
 
 A Fine Scrolling Engine
