@@ -2,6 +2,7 @@
 
 .include "hardware.s"
 
+delay = 15
 
 init
         jsr init_font
@@ -15,8 +16,7 @@ init
 ;        ldx #24
 ;        jsr label_pages
 
-loop
-        ldx #15         ; number of VBLANKs to wait
+loop    ldx #15         ; number of VBLANKs to wait
 ?start  lda RTCLOK+2    ; check fastest moving RTCLOCK byte
 ?wait   cmp RTCLOK+2    ; VBLANK will update this
         beq ?wait       ; delay until VBLANK changes it

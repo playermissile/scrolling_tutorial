@@ -187,7 +187,7 @@ difference in memory layout for the screen data, just more of it.
    :align: center
    :width: 50%
 
-
+.. _course_scroll_down:
 
 Course Scrolling Down
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -787,6 +787,60 @@ vertical scrolling bits.
 
 Continuous Fine Scrolling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We can now add the ``VSCROL`` hardware register to the course scrolling demo to
+produce fine scrolling:
+
+.. figure:: fine_scroll_down.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/fine_scroll_down.s">fine_scroll_down.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_scroll_down.xex">fine_scroll_down.xex</a></li>
+   </ul>
+
+The code for this example is largely the same as the :ref:`course scroll down
+<course_scroll_down>` demo, which a few minor additions. We need one
+additional variable to keep our own copy of the hardware scrolling register,
+since ``VSCROL`` is a write-only register:
+
+.. code-block::
+
+   vert_scroll = $90       ; variable used to store VSCROL value
+   vert_scroll_max = 8     ; ANTIC mode 4 has 8 scan lines
+
+The ``init`` code from the demo also needs to initialize the variable:
+
+.. code-block::
+
+           lda #0          ; initialize vertical scrolling value
+           sta vert_scroll
+
+and the main loop calls the fine scrolling routine instead of the course
+scrolling routine.
+
+.. code-block::
+
+   loop    ldx #delay      ; number of VBLANKs to wait
+   ?start  lda RTCLOK+2    ; check fastest moving RTCLOCK byte
+   ?wait   cmp RTCLOK+2    ; VBLANK will update this
+           beq ?wait       ; delay until VBLANK changes it
+           dex             ; delay for a number of VBLANKs
+           bpl ?start
+   
+           ; enough time has passed, scroll one scan line
+           jsr fine_scroll_down
+   
+           jmp loop
+
+The ``fine_scroll_down`` routine takes care of updating the fine scrolling
+variable and setting the hardware ``VSCROL`` register. If it has scrolled 8
+scan lines, it calls the ``course_scroll_down`` routine, which is unchanged
+from the course scrolling demo.
+
 
 
 
