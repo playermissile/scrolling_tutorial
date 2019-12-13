@@ -6,7 +6,7 @@
 Atari 8-bit Fine Scrolling: An (In)Complete(ish) Tutorial
 ======================================================================
 
-**Revision 1, updated 12 Dec 2019**
+**Revision 2, updated 12 Dec 2019**
 
 This is a tutorial on fine scrolling for the Atari 8-bit series of computers.
 In a nutshell, the ANTIC coprocessor provides 2D hardware scrolling at very
@@ -917,24 +917,35 @@ fine scrolling, measured in color clocks.
 Interlude: Vertical Blank Interrupts
 ------------------------------------------------
 
-The technique we have been using where we waiting until the the vertical blank
-has *just* passed as the trigger to begin our modifications to ``LMS``
-addresses and the scrolling registers is not going to be sufficient when we
-move to horizontal scrolling.
+In the previous examples, the technique for updating ``LMS`` addresses and
+changing hardware scrolling registers has been waiting until the the vertical
+blank has passed, then performing the changes.
 
-For vertical scrolling by itself, the current technique *is* largely sufficient
-because ANTIC will not go back and re-read the ``LMS`` address of a previously
-processed display list command. Changing the ``LMS`` while ANTIC is in the
-middle screen would only have the effect of delaying the update by a frame.
+This will quickly become insufficient as we move to horizontal scrolling, and
+further into more real-world examples. Looping until the value of ``RTCLOK+2``
+changes doesn't mean the vertical blank has *just* passed; rather, it means
+that all of the vertical blank code has executed and performed its ``RTI``. The
+vertical blank may take many thousands of CPU cycles, and may not return until
+well into the visible part of the screen.
 
-Horizontal scrolling is much more sensitive to changes in the middle of the
-screen, as each display list command has a ``LMS`` address. Updating all
-addresses while ANTIC is rendering mid-screen will result in tearing effects,
-where the region above the change and below the change will be offset by a
-byte.
+In simple demos and toy examples, the ``RTCLOK+2`` technique *is* largely
+sufficient. But there are scenarios where problems can arise if updates to the hardware register happen at specific times.
 
-Changing the hardware registers ``VSCROL`` or ``HSCROL`` in the middle of a
-frame will have immediate effect for scan lines rendered after that change.
+For instance, in an `AtariAge forum post
+<https://atariage.com/forums/topic/299468-wip-scrolling-tutorial/>`_, the
+author of the Altirra emulator stated: "failing to synchronize [register
+changes] to the drawing can not only cause delays, it can seriously glitch the
+display list. Specifically, decreasing VSCROL around when ANTIC is processing
+the end of the vertical scrolling region can cause it to miss the vertical stop
+and wrap its 4-bit delta counter around, adding a dozen scanlines to the mode
+line."
+
+Other unexpected effects like screen tearing could occur if changes happen to
+the hardware registers while ANTIC is drawing the scrolling region. There are
+cases, for instance :ref:`parallax scrolling <parallax_scrolling>`` and
+multiple independent scrolling regions where it is desired that the registers
+be changed mid-screen, but these will be performed in a DLI where the change
+can occur on a particular scanline and during the horizontal blank.
 
 For all these reasons, and as the examples are becoming more complicated and
 applicable to real applications, the code to update the scrolling registers and
