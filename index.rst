@@ -1017,6 +1017,23 @@ instance in a scrolled, normal playfield, the equivalent of 40 bytes worth of
 color clocks, 160, are still displayed, centered as normal in the TV display.
 But where those color clocks *start* is what's controlled by ``HSCROL``.
 
+For example, here's the previous example except with the ``HSCROL`` value set to 6:
+
+.. figure:: fine_hscroll_6.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/fine_hscroll_6.s">fine_hscroll_6.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_hscroll_6.xex">fine_hscroll_6.xex</a></li>
+   </ul>
+
+The value of ``HSCROL`` is the number of color clocks to scroll the viewport to
+the left. Equivalently, you can think of it as the number of color clocks in
+the left side buffer zone that are shifted to the right into the visible area.
+
 
 Interlude: Vertical Blank Interrupts
 ------------------------------------------------
