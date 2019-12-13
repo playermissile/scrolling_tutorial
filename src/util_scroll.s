@@ -440,6 +440,40 @@ dlist_lms_mode4
         .byte $2
         .byte $41,<dlist_lms_mode4,>dlist_lms_mode4 ; JVB ends display list
 
+
+        *= (* & $ff00) + 256 ; next page boundary
+
+; one page per line, used for coarse scrolling. Start visible region
+; in middle of each page so it can scroll either right or left immediately
+; without having to check for a border
+dlist_hscroll_mode4
+        .byte $70,$70,$70
+        .byte $54,$70,$80       ; first line of scrolling region
+        .byte $54,$70,$81
+        .byte $54,$70,$82
+        .byte $54,$70,$83
+        .byte $54,$70,$84
+        .byte $54,$70,$85
+        .byte $54,$70,$86
+        .byte $54,$70,$87
+        .byte $54,$70,$88
+        .byte $54,$70,$89
+        .byte $54,$70,$8a
+        .byte $54,$70,$8b
+        .byte $54,$70,$8c
+        .byte $54,$70,$8d
+        .byte $54,$70,$8e
+        .byte $54,$70,$8f
+        .byte $54,$70,$90
+        .byte $54,$70,$91
+        .byte $54,$70,$92
+        .byte $54,$70,$93
+        .byte $54,$70,$94
+        .byte $54,$70,$95       ; last line in scrolling region
+        .byte $42,<footer_text, >footer_text ; 2 Mode 2 lines + LMS + address
+        .byte $2
+        .byte $41,<dlist_hscroll_mode4,>dlist_hscroll_mode4 ; JVB ends display list
+
         ;             0123456789012345678901234567890123456789
 footer_text
         .sbyte +$80, " ANTIC MODE 2, NOT SCROLLED, FIRST LINE "

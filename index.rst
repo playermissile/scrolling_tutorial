@@ -331,7 +331,7 @@ is entirely arbitrary; the ``LMS`` calculations will just be more complicated
 (and therefore slower) with widths where you must do arithmetic to calculate
 the addresses.
 
-
+.. _coarse_scroll_left:
 
 Example: Coarse Scrolling Left
 -----------------------------------
@@ -699,6 +699,8 @@ Here's the same example, except the ``VSCROL`` register is set to 4:
 where it shows that 4 scan lines of line A have been scrolled off the screen
 **and** the first ANTIC mode 2 line shows 4 of its 8 scan lines.
 
+.. _vscroll:
+
 The VSCROL Hardware Register
 ------------------------------------
 
@@ -898,20 +900,122 @@ line further down in the memory layout so there is scrolling room as the
 viewport moves up.
 
 
+Interlude: Wide and Narrow Playfields
+-----------------------------------------------------
+
+Normal display lists for mode 4 are 40 bytes wide, producing 40 characters.
+This is equivalent to 160 color clocks, the standard playfield width. ANTIC is
+capable of drawing two other widths, however: a narrow playfield of 128 color
+clocks (32 bytes) and a wide playfield of 176 color clocks (48 bytes). This is
+controlled by two of the bits of the hardware register ``DMACTL`` at ``$d400``
+and its shadow ``SDMCTL`` at ``$22f``.
+
 
 Horizontal Fine Scrolling
 ------------------------------------------------------
 
+Horizontal fine scrolling is controlled by ANTIC's ``HSCROL`` hardware
+register. The register can be any number from 0 - 15 representing the number of
+color clocks to scroll. ANTIC accomplishes horizontal scrolling by, behind the
+scenes, reading data as if the playfield width was the next larger size, but
+continuing to display the screen with the nominal playfield width.
+
+For example, if ANTIC is scrolling the normal 40 byte playfield, it will
+process data as if it were displaying the wide playfield of 48 bytes per line.
+It will, however, only *display* 40 bytes worth of data: 160 color clocks.
+
+This will become more clear with an example. First, let's see what happens just
+by turning on the horizontal scrolling bit on a display list.
 
 Preparing the Display List
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This simple program shows the memory layout defined in the :ref:`coarse
+scrolling <coarse_scroll_left>` section, where lines are 256 bytes wide and
+every 16 bytes it is stamped with the address of that byte as a 4 digit hex
+value. For example, the left-most byte of the top line of the screen is at
+memory location ``$8070``, so the memory layout is formatted to show the high
+nibble (the ``8`` from ``8070``) directly on the address to be labeled, and the
+next 3 nibbles converted to digits displayed in the 3 subsequent columns.
+
+.. figure:: memory_layout_hscroll.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/memory_layout_hscroll.s">memory_layout_hscroll.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/memory_layout_hscroll.xex">memory_layout_hscroll.xex</a></li>
+   </ul>
+
+The display list used here does *not* have any scrolling bits set, it's exactly
+the same as a coarse scrolling display list with a ``LMS`` instruction on each
+of the lines A through L. All of the ``LMS`` addresses have their low bytes set
+to ``$70``, where the line at the top of the screen is set to ``$8070`` with
+the following display list instruction:
+
+.. code-block::
+
+           .byte $44,$70,$80
+
+Below is almost the same program, the only difference being the horizontal
+scrolling bit has been set on the display list instructions for the scrolling
+region of lines A through V, so for example the first mode 4 line has both the
+``LMS`` and ``HSCROLL`` bits set:
+
+.. code-block::
+
+           .byte $54,$70,$80
+
+Notice the low byte of the display list ``LMS`` addresses remain set at ``$70``, so the the upper left corner of the screen address is supposed to start at ``$8070``, but the resulting visible region looks like this:
+
+.. figure:: fine_hscroll_dlist.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/fine_hscroll_dlist.s">fine_hscroll_dlist.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_hscroll_dlist.xex">fine_hscroll_dlist.xex</a></li>
+   </ul>
+
+
+The first visible byte in the upper left corner of starts at ``$8074``!
+
+This is a consequence of the wide playfield being used behind the scenes as a
+buffer for the extra data needed for the color clock shift.
 
 
 The HSCROL Hardware Register
 ------------------------------------
 
 The ``HSCROL`` hardware register at ``$d404`` controls the horizontal shift for
-fine scrolling, measured in color clocks.
+fine scrolling, measured in color clocks from 0 - 15.
+
+On display list instructions with the horizontal scrolling bit set, ANTIC
+automatically expands its screen memory use to the next larger playfield size,
+unless it is already using a wide playfield. Scrolling with a 32 byte narrow
+playfield will cause ANTIC to read memory as if it were using a normal 40 byte
+playfield, and scrolling a normal playfield will be processed as if it were a
+wide 48 byte playfield.
+
+It uses these extra bytes as the scrolling *buffer zone*, the horizontal
+equivalent of the vertical `buffer zone <vscroll>` that takes scan lines from
+the first display list instruction with the vertical scroll bit cleared after a
+scrolling section.
+
+Each playfield expansion results in 8 extra bytes of data being read. They are
+distributed with 4 bytes to the left of the playfield and 4 bytes to the right.
+Notice that 4 bytes corresponds to 16 color clocks, exactly the limit of the
+``HSCROL`` register.
+
+The ``HSCROL`` value is the number of color clocks in this buffer zone that are
+shifted into the main view. The *size* of the display does not change, so for
+instance in a scrolled, normal playfield, the equivalent of 40 bytes worth of
+color clocks, 160, are still displayed, centered as normal in the TV display.
+But where those color clocks *start* is what's controlled by ``HSCROL``.
 
 
 Interlude: Vertical Blank Interrupts
