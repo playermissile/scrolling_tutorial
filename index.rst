@@ -136,10 +136,20 @@ a line is removed from the top.) This direction is simpler than horizontal
 because only a single ``LMS`` instruction needs to be updated, so that is where
 we will start.
 
+Memory Layout
+~~~~~~~~~~~~~~~~~~~~
+
+To move a viewport window up or down over a larger map doesn't require any
+difference in memory layout for the screen data, just more of it.
+
+.. figure:: memory_layout_vertical.png
+   :align: center
+   :width: 50%
+
 .. _course_no_scroll_dlist:
 
-A Starting Point
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Preparing the Display List
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here is a display list without any scrolling, and just a single instruction
 with ``LMS`` set in the main region of mode 4 lines. That ``LMS`` tells ANTIC
@@ -177,20 +187,10 @@ ANTIC mode 2 at the bottom for non-scrolling status lines.
            .byte $41,<dlist_course_mode4,>dlist_course_mode4 ; JVB ends display list
 
 
-Memory Layout
-~~~~~~~~~~~~~~~~~~~~
-
-To move a viewport window up or down over a larger map doesn't require any
-difference in memory layout for the screen data, just more of it.
-
-.. figure:: memory_layout_vertical.png
-   :align: center
-   :width: 50%
-
 .. _course_scroll_down:
 
-Course Scrolling Down
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Example: Course Scrolling Down
+----------------------------------
 
 Scrolling down means new data is appearing at the bottom of the screen, pushing
 data currently on the screen upwards and finally disappearing off the top of
@@ -251,8 +251,8 @@ then updates the screen memory pointer.
 
 
 
-Course Scrolling Up
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Example: Course Scrolling Up
+----------------------------------
 
 Scrolling up means new data is appearing at the top of the screen, pushing data
 currently on the screen downwards and finally disappearing off the bottom of
@@ -333,8 +333,8 @@ the addresses.
 
 
 
-Course Scrolling Left
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Example: Course Scrolling Left
+-----------------------------------
 
 Scrolling left means new data is appearing on the left of the screen, pushing
 data currently on the screen to the right and finally disappearing off the
@@ -412,8 +412,8 @@ Here's the display list:
            .byte $2
            .byte $41,<dlist_lms_mode4,>dlist_lms_mode4 ; JVB ends display list
 
-Course Scrolling Right
-~~~~~~~~~~~~~~~~~~~~~~~~~
+Example: Course Scrolling Right
+-----------------------------------
 
 Scrolling right means new data is appearing on the right of the screen, pushing
 data currently on the screen to the left and finally disappearing off the
@@ -495,8 +495,8 @@ location of the viewport, and changing the low byte to set the horizontal
 location.
 
 
-Course Scrolling Example
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Example: 2D Course Scrolling
+-----------------------------------------------------
 
 This example scrolls the viewport simultaneously in the vertical and horizontal
 directions using the techniques described above.
@@ -649,7 +649,7 @@ shortening the number of displayed lines.
 This will become more clear with an example. First, let's see what happens just
 by turning on the vertical scrolling bit on a display list.
 
-First Display List With Scrolling
+Preparing the Display List
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here's the same program used in the :ref:`course vertical scrolling
@@ -699,15 +699,15 @@ Here's the same example, except the ``VSCROL`` register is set to 4:
 where it shows that 4 scan lines of line A have been scrolled off the screen
 **and** the first ANTIC mode 2 line shows 4 of its 8 scan lines.
 
-ANTIC's Vertical Scrolling Buffer Zone
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The VSCROL Hardware Register
+------------------------------------
 
-The ``VSCROL`` hardware register controls how many scan lines are shifted for
-fine scrolling. The value tells ANTIC on which scan line to start rendering for
-the first display list instruction it encounters with the vertical scrolling
-bit set. Subsequent lines in the display list that have the vertical scrolling
-bit set are fully rendered, but because that initial scan line was rendered
-with fewer scan lines, the display has appeared to move up.
+The ``VSCROL`` hardware register at ``$d405`` controls how many scan lines are
+shifted for fine scrolling. The value tells ANTIC on which scan line to start
+rendering for the first display list instruction it encounters with the
+vertical scrolling bit set. Subsequent lines in the display list that have the
+vertical scrolling bit set are fully rendered, but because that initial scan
+line was rendered with fewer scan lines, the display has appeared to move up.
 
 What confused the author until reading section 4.7 in the `Altirra Hardware Reference Manual <http://www.virtualdub.org/downloads/Altirra%20Hardware%20Reference%20Manual.pdf>`_
 is that ``VSCROL`` value also controls where ANTIC *stops* rendering on that
@@ -785,8 +785,8 @@ vertical scrolling bits.
 .. note:: The number of scan lines ANTIC will generate is reduced by vertical scrolling. The total number of scan lines can be counted by setting ``VSCROL = 0``, meaning the buffer zone line will be reduced to a single scan line. Changes to ``VSCROL`` don't change the total number of lines generated, for instance: setting ``VSCROL = 2`` reduces the first scrolled line to 6 scan lines but increases the buffer zone to 3 scan lines, resulting in the same net number of scan lines in the scrolling + buffer zone regions.
 
 
-Fine Scrolling Down
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Example: Fine Scrolling Down
+-------------------------------
 
 We can now add the ``VSCROL`` hardware register to the course scrolling demo to
 produce fine scrolling:
@@ -858,8 +858,8 @@ from the course scrolling demo.
 
 
 
-Fine Scrolling Up
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Example: Fine Scrolling Up
+----------------------------
 
 The code for fine scrolling the viewport up has very few changes from the above.
 
@@ -903,6 +903,16 @@ Horizontal Fine Scrolling
 ------------------------------------------------------
 
 
+Preparing the Display List
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+The HSCROL Hardware Register
+------------------------------------
+
+The ``HSCROL`` hardware register at ``$d404`` controls the horizontal shift for
+fine scrolling, measured in color clocks.
+
 
 Interlude: Vertical Blank Interrupts
 ------------------------------------------------
@@ -912,19 +922,34 @@ has *just* passed as the trigger to begin our modifications to ``LMS``
 addresses and the scrolling registers is not going to be sufficient when we
 move to horizontal scrolling.
 
-For vertical scrolling by itself, it *is* largely sufficient because ANTIC will
-not go back and re-read the LMS address of a previously processed display list
-command. Changing the ``LMS`` while ANTIC is in the middle screen would only
-have the effect of delaying the update by a frame.  However, changing the
-hardware ``VSCROL`` register in the middle of a frame will have immediate
-effect, and for more complicated scrolling examples in subsequent sections,
-changes will happen in the vertical blank.
+For vertical scrolling by itself, the current technique *is* largely sufficient
+because ANTIC will not go back and re-read the ``LMS`` address of a previously
+processed display list command. Changing the ``LMS`` while ANTIC is in the
+middle screen would only have the effect of delaying the update by a frame.
+
+Horizontal scrolling is much more sensitive to changes in the middle of the
+screen, as each display list command has a ``LMS`` address. Updating all
+addresses while ANTIC is rendering mid-screen will result in tearing effects,
+where the region above the change and below the change will be offset by a
+byte.
+
+Changing the hardware registers ``VSCROL`` or ``HSCROL`` in the middle of a
+frame will have immediate effect for scan lines rendered after that change.
+
+For all these reasons, and as the examples are becoming more complicated and
+applicable to real applications, the code to update the scrolling registers and
+``LMS`` addresses will be moved into the vertical blank to avoid any potential
+mid-screen changes.
 
 
 
 
 Combined Fine Scrolling
 --------------------------------------------------
+
+
+Preparing the Display List
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 
