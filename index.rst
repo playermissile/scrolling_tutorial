@@ -274,15 +274,15 @@ address that ANTIC uses for the screen memory:
 
 .. code-block::
 
-   ; move viewport one line down by pointing display list start address
-   ; to the address 40 bytes further in memory
-   coarse_scroll_down
-           clc
+   ; move viewport one line up by pointing display list start address
+   ; to the address 40 bytes earlier in memory
+   coarse_scroll_up
+           sec
            lda dlist_coarse_address
-           adc #40
+           sbc #40
            sta dlist_coarse_address
            lda dlist_coarse_address+1
-           adc #0
+           sbc #0
            sta dlist_coarse_address+1
            rts
 

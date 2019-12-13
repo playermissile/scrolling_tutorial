@@ -28,8 +28,8 @@ loop
 
         jmp loop
 
-; move viewport one line down by pointing display list start address
-; to the address 40 bytes further in memory
+; move viewport one line up by pointing display list start address
+; to the address 40 bytes earlier in memory
 coarse_scroll_up
         sec
         lda dlist_coarse_address
