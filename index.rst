@@ -785,7 +785,7 @@ vertical scrolling bits.
 .. note:: The number of scan lines ANTIC will generate is reduced by vertical scrolling. The total number of scan lines can be counted by setting ``VSCROL = 0``, meaning the buffer zone line will be reduced to a single scan line. Changes to ``VSCROL`` don't change the total number of lines generated, for instance: setting ``VSCROL = 2`` reduces the first scrolled line to 6 scan lines but increases the buffer zone to 3 scan lines, resulting in the same net number of scan lines in the scrolling + buffer zone regions.
 
 
-Continuous Fine Scrolling
+Fine Scrolling Down
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We can now add the ``VSCROL`` hardware register to the course scrolling demo to
@@ -841,7 +841,42 @@ variable and setting the hardware ``VSCROL`` register. If it has scrolled 8
 scan lines, it calls the ``course_scroll_down`` routine, which is unchanged
 from the course scrolling demo.
 
+.. code-block::
 
+   ; scroll one scan line down and check if at HSCROL limit
+   fine_scroll_down
+           inc vert_scroll
+           lda vert_scroll
+           cmp #vert_scroll_max ; check to see if we need to do a course scroll
+           bcc ?done       ; nope, still in the middle of the character
+           jsr course_scroll_down ; yep, do a course scroll...
+           lda #0          ;  ...followed by reseting the vscroll register
+           sta vert_scroll
+   ?done   sta VSCROL      ; store vertical scroll value in hardware register
+           rts
+
+
+
+Fine Scrolling Up
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The code for fine scrolling the viewport up has very few changes from the above.
+
+.. figure:: fine_scroll_up.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/fine_scroll_up.s">fine_scroll_up.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_scroll_up.xex">fine_scroll_up.xex</a></li>
+   </ul>
+
+
+
+Horizontal Fine Scrolling
+------------------------------------------------------
 
 
 
@@ -860,11 +895,6 @@ have the effect of delaying the update by a frame.  However, changing the
 hardware ``VSCROL`` register in the middle of a frame will have immediate
 effect, and for more complicated scrolling examples in subsequent sections,
 changes will happen in the vertical blank.
-
-
-
-Horizontal Fine Scrolling
-------------------------------------------------------
 
 
 

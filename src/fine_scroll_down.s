@@ -40,8 +40,7 @@ fine_scroll_down
         jsr course_scroll_down ; yep, do a course scroll...
         lda #0          ;  ...followed by reseting the vscroll register
         sta vert_scroll
-?done   lda vert_scroll ; store vertical scroll value
-        sta VSCROL      ;   in actual hardware register
+?done   sta VSCROL      ; store vertical scroll value in hardware register
         rts
 
 ; move viewport one line down by pointing display list start address
