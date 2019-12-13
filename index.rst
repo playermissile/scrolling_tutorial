@@ -15,10 +15,10 @@ little computational expense.
 Scrolling means the display screen is a window or *viewport* on a larger map.
 At any moment in time, the user is looking at only a small portion of the
 overall area, and this viewport can be moved around. The Atari hardware
-provides for both course scrolling (that is, moving the viewport at byte or
+provides for both coarse scrolling (that is, moving the viewport at byte or
 character boundaries) and fine scrolling (moving with higher resolution: scan
 lines vertically and color clocks horizontally). Fine scrolling on the Atari is
-built upon course scrolling, so we will first examine the latter before make
+built upon coarse scrolling, so we will first examine the latter before make
 the scrolling smooth by tackling the former.
 
 No prior knowledge of scrolling is necessary before reading this tutorial.
@@ -85,19 +85,19 @@ text modes make them ideal candidates for scrolling games.
    * `De Re Atari, Chapter 2 <https://www.atariarchives.org/dere/chapt02.php>`_
 
 
-Course Scrolling
+Coarse Scrolling
 ---------------------------------------
 
-Course scrolling, that is: scrolling at character or byte boundaries (in what
+Coarse scrolling, that is: scrolling at character or byte boundaries (in what
 appears on screen as blocky jumps), can be accomplished without any use of the
-hardware scrolling registers. In fact, course scrolling falls out as a side-
+hardware scrolling registers. In fact, coarse scrolling falls out as a side-
 effect of the ``LMS`` bit on display list commands. Being able to reposition
 the memory pointer for any display list instruction means that you can tell
 ANTIC where to look in memory when it draws a scan line. Simply by moving the
 address pointer to a different location, you can change the display.
 
-First we will look at vertical course scrolling which is the simpler case than
-horizontal course scrolling. After examining horizontal course scrolling, we
+First we will look at vertical coarse scrolling which is the simpler case than
+horizontal coarse scrolling. After examining horizontal coarse scrolling, we
 will combine the two which will give us unrestricted 2D scrolling.
 
 
@@ -125,10 +125,10 @@ Because there are so many types of lines, the word line becomes ambiguous withou
 
 
 
-Vertical Course Scrolling
+Vertical Coarse Scrolling
 ------------------------------------------
 
-Course scrolling vertically is moving the playfield data such that the user
+Coarse scrolling vertically is moving the playfield data such that the user
 sees a new line of information on the top of the screen while the line that was
 previously on the on the bottom of the screen moves off, and all other visible
 lines move down one line. (Or vice-versa: new data appears on the bottom while
@@ -146,7 +146,7 @@ difference in memory layout for the screen data, just more of it.
    :align: center
    :width: 50%
 
-.. _course_no_scroll_dlist:
+.. _coarse_no_scroll_dlist:
 
 Preparing the Display List
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -155,15 +155,15 @@ Here is a display list without any scrolling, and just a single instruction
 with ``LMS`` set in the main region of mode 4 lines. That ``LMS`` tells ANTIC
 where to look in memory for that first line and all subsequent lines until another ``LMS`` instruction is encountered.
 
-.. figure:: course_no_scroll_dlist.png
+.. figure:: coarse_no_scroll_dlist.png
    :align: center
    :width: 90%
 
 .. raw:: html
 
    <ul>
-   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_no_scroll_dlist.s">course_no_scroll_dlist.s</a></li>
-   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_no_scroll_dlist.xex">course_no_scroll_dlist.xex</a></li>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/coarse_no_scroll_dlist.s">coarse_no_scroll_dlist.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/coarse_no_scroll_dlist.xex">coarse_no_scroll_dlist.xex</a></li>
    </ul>
 
 All this test program does is create a display list and show a simple test
@@ -175,8 +175,8 @@ ANTIC mode 2 at the bottom for non-scrolling status lines.
 
 .. code-block::
 
-   ; Simple display list to be used as course scrolling comparison
-   dlist_course_mode4
+   ; Simple display list to be used as coarse scrolling comparison
+   dlist_coarse_mode4
            .byte $70,$70,$70       ; 24 blank lines
            .byte $44,$00,$80       ; Mode 4 + LMS + address
            .byte 4,4,4,4,4,4,4,4   ; 21 more Mode 4 lines
@@ -184,27 +184,27 @@ ANTIC mode 2 at the bottom for non-scrolling status lines.
            .byte 4,4,4,4,4
            .byte $42,<static_text, >static_text ; 2 Mode 2 lines + LMS + address
            .byte $2
-           .byte $41,<dlist_course_mode4,>dlist_course_mode4 ; JVB ends display list
+           .byte $41,<dlist_coarse_mode4,>dlist_coarse_mode4 ; JVB ends display list
 
 
-.. _course_scroll_down:
+.. _coarse_scroll_down:
 
-Example: Course Scrolling Down
+Example: Coarse Scrolling Down
 ----------------------------------
 
 Scrolling down means new data is appearing at the bottom of the screen, pushing
 data currently on the screen upwards and finally disappearing off the top of
 the screen:
 
-.. figure:: course_scroll_down.png
+.. figure:: coarse_scroll_down.png
    :align: center
    :width: 90%
 
 .. raw:: html
 
    <ul>
-   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_scroll_down.s">course_scroll_down.s</a></li>
-   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_scroll_down.xex">course_scroll_down.xex</a></li>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/coarse_scroll_down.s">coarse_scroll_down.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/coarse_scroll_down.xex">coarse_scroll_down.xex</a></li>
    </ul>
 
 This is accomplished by updating the start address that ANTIC sees for the
@@ -214,14 +214,14 @@ first line.
 
    ; move viewport one line down by pointing display list start address
    ; to the address 40 bytes further in memory
-   course_scroll_down
+   coarse_scroll_down
            clc
-           lda dlist_course_address
+           lda dlist_coarse_address
            adc #40
-           sta dlist_course_address
-           lda dlist_course_address+1
+           sta dlist_coarse_address
+           lda dlist_coarse_address+1
            adc #0
-           sta dlist_course_address+1
+           sta dlist_coarse_address+1
            rts
 
 Adding 40 bytes to that address will move the starting point one
@@ -242,7 +242,7 @@ The code needs a timing loop so the scrolling doesn't happen too fast:
            bpl ?start
    
            ; enough time has passed, scroll one line
-           jsr course_scroll_down
+           jsr coarse_scroll_down
    
            jmp loop
 
@@ -251,22 +251,22 @@ then updates the screen memory pointer.
 
 
 
-Example: Course Scrolling Up
+Example: Coarse Scrolling Up
 ----------------------------------
 
 Scrolling up means new data is appearing at the top of the screen, pushing data
 currently on the screen downwards and finally disappearing off the bottom of
 the screen:
 
-.. figure:: course_scroll_up.png
+.. figure:: coarse_scroll_up.png
    :align: center
    :width: 90%
 
 .. raw:: html
 
    <ul>
-   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_scroll_up.s">course_scroll_up.s</a></li>
-   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_scroll_up.xex">course_scroll_up.xex</a></li>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/coarse_scroll_up.s">coarse_scroll_up.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/coarse_scroll_up.xex">coarse_scroll_up.xex</a></li>
    </ul>
 
 This is accomplished using exactly the same method of changing the start
@@ -276,14 +276,14 @@ address that ANTIC uses for the screen memory:
 
    ; move viewport one line down by pointing display list start address
    ; to the address 40 bytes further in memory
-   course_scroll_down
+   coarse_scroll_down
            clc
-           lda dlist_course_address
+           lda dlist_coarse_address
            adc #40
-           sta dlist_course_address
-           lda dlist_course_address+1
+           sta dlist_coarse_address
+           lda dlist_coarse_address+1
            adc #0
-           sta dlist_course_address+1
+           sta dlist_coarse_address+1
            rts
 
 But instead of adding 40 bytes, we subtract 40 bytes from the address to move
@@ -294,11 +294,11 @@ This gives the appearance of the playfield window moving up across the map.
 
 
 
-Horizontal Course Scrolling
+Horizontal Coarse Scrolling
 ------------------------------------------
 
-Horizontal course scrolling is only slightly more complicated than vertical
-course scrolling because multiple ``LMS`` addresses need to be updated.
+Horizontal coarse scrolling is only slightly more complicated than vertical
+coarse scrolling because multiple ``LMS`` addresses need to be updated.
 
 
 
@@ -333,7 +333,7 @@ the addresses.
 
 
 
-Example: Course Scrolling Left
+Example: Coarse Scrolling Left
 -----------------------------------
 
 Scrolling left means new data is appearing on the left of the screen, pushing
@@ -342,15 +342,15 @@ right side of the screen. Every 16 bytes, the memory layout has been stamped
 with the hex addresses of the screen memory so you can tell where the viewport
 has scrolled to.
 
-.. figure:: course_scroll_left.png
+.. figure:: coarse_scroll_left.png
    :align: center
    :width: 90%
 
 .. raw:: html
 
    <ul>
-   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_scroll_left.s">course_scroll_left.s</a></li>
-   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_scroll_left.xex">course_scroll_left.xex</a></li>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/coarse_scroll_left.s">coarse_scroll_left.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/coarse_scroll_left.xex">coarse_scroll_left.xex</a></li>
    </ul>
 
 Because each ``LMS`` address in the scrolling region and the one-line buffer
@@ -361,7 +361,7 @@ lower in memory, in this case: one byte at a time:
 
    ; move viewport one byte to the left by pointing each display list start
    ; address to one byte lower in memory
-   course_scroll_left
+   coarse_scroll_left
            ldy #22         ; 22 lines to modify
            ldx #4          ; 4th byte after start of display list is low byte of address
    ?loop   dec dlist_lms_mode4,x
@@ -381,7 +381,7 @@ Here's the display list:
 
 .. code-block::
 
-   ; one page per line, used for course scrolling. Start visible region
+   ; one page per line, used for coarse scrolling. Start visible region
    ; in middle of each page so it can scroll either right or left immediately
    ; without having to check for a border
    dlist_lms_mode4
@@ -412,22 +412,22 @@ Here's the display list:
            .byte $2
            .byte $41,<dlist_lms_mode4,>dlist_lms_mode4 ; JVB ends display list
 
-Example: Course Scrolling Right
+Example: Coarse Scrolling Right
 -----------------------------------
 
 Scrolling right means new data is appearing on the right of the screen, pushing
 data currently on the screen to the left and finally disappearing off the
 left side of the screen. 
 
-.. figure:: course_scroll_right.png
+.. figure:: coarse_scroll_right.png
    :align: center
    :width: 90%
 
 .. raw:: html
 
    <ul>
-   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_scroll_right.s">course_scroll_right.s</a></li>
-   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_scroll_right.xex">course_scroll_right.xex</a></li>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/coarse_scroll_right.s">coarse_scroll_right.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/coarse_scroll_right.xex">coarse_scroll_right.xex</a></li>
    </ul>
 
 The code for this is exactly analogous to scrolling left, except we are
@@ -438,7 +438,7 @@ viewport to the right.
 
    ; move viewport one byte to the right by pointing each display list start
    ; address to one byte higher in memory
-   course_scroll_right
+   coarse_scroll_right
            ldy #22         ; 22 lines to modify
            ldx #4          ; 4th byte after start of display list is low byte of address
    ?loop   inc dlist_lms_mode4,x
@@ -454,11 +454,11 @@ The display list is exactly the same as in the scrolling left example.
 
 
 
-Combined Course Scrolling
+Combined Coarse Scrolling
 --------------------------------------------------
 
-Simultaneous horizontal and vertical course scrolling is possible with very
-little additional effort over horizontal course scrolling alone.
+Simultaneous horizontal and vertical coarse scrolling is possible with very
+little additional effort over horizontal coarse scrolling alone.
 
 Adding vertical scrolling to a display list that uses ``LMS`` addresses for
 every line means that, unlike the simple vertical scrolling that used a single
@@ -480,11 +480,11 @@ viewport.
 As in the horizontal scrolling examples above, the combined scrolling examples
 will also use the page-per-line memory layout: 256 bytes per line.
 
-Horizontal course scrolling requires an ``LMS`` address for every display list
+Horizontal coarse scrolling requires an ``LMS`` address for every display list
 line in the scrolling region, and using this memory layout means that the low
 byte of that address is modified for every scroll. The high byte is unmodified.
 
-Vertical course scrolling using this display list and memory layout is
+Vertical coarse scrolling using this display list and memory layout is
 convenient because the vertical position of the viewport is solely dependent on
 the high byte of the memory address; the low byte is unchanged.
 
@@ -495,24 +495,24 @@ location of the viewport, and changing the low byte to set the horizontal
 location.
 
 
-Example: 2D Course Scrolling
+Example: 2D Coarse Scrolling
 -----------------------------------------------------
 
 This example scrolls the viewport simultaneously in the vertical and horizontal
 directions using the techniques described above.
 
-.. figure:: course_scroll_2d.png
+.. figure:: coarse_scroll_2d.png
    :align: center
    :width: 90%
 
 .. raw:: html
 
    <ul>
-   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/course_scroll_2d.s">course_scroll_2d.s</a></li>
-   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/course_scroll_2d.xex">course_scroll_2d.xex</a></li>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/coarse_scroll_2d.s">coarse_scroll_2d.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/coarse_scroll_2d.xex">coarse_scroll_2d.xex</a></li>
    </ul>
 
-The display list is unchanged from the horizontal course scrolling examples.
+The display list is unchanged from the horizontal coarse scrolling examples.
 
 There are several differences in code from the horizontal scrolling version.
 First some variables are added to track the direction at which the viewport is
@@ -549,7 +549,7 @@ before determining how to changing the low bytes of the ``LMS`` addresses:
 
    ; move viewport one byte to the left/right by pointing each display list
    ; address to one lower/byte higher in memory (i.e. changing low byte)
-   course_scroll_horz
+   coarse_scroll_horz
            ldy #22         ; 22 lines to modify
            ldx #0
            lda horz_dir
@@ -577,7 +577,7 @@ code is very similar to the above:
 
    ; move viewport one line up/down by pointing each display list address
    ; one *page* lower/byte higher in memory (i.e. changing high byte)
-   course_scroll_vert
+   coarse_scroll_vert
            ldy #22         ; 22 lines to modify
            ldx #0
            lda vert_dir
@@ -652,8 +652,8 @@ by turning on the vertical scrolling bit on a display list.
 Preparing the Display List
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Here's the same program used in the :ref:`course vertical scrolling
-<course_no_scroll_dlist>` section, except now the vertical scrolling bit has
+Here's the same program used in the :ref:`coarse vertical scrolling
+<coarse_no_scroll_dlist>` section, except now the vertical scrolling bit has
 been set on the display list instructions for the scrolling region of lines A
 through V. Notice the first line of the mode 2 status lines at he bottom seems
 to be missing! Actually, it is still there, or more correctly: one scan line of
@@ -674,8 +674,8 @@ Note that the ``VSCROL`` hardware register is set to zero. Here's the display li
 
 .. code-block::
 
-   ; Simple display list to be used as course scrolling comparison
-   dlist_course_mode4
+   ; Simple display list to be used as coarse scrolling comparison
+   dlist_coarse_mode4
            .byte $70,$70,$70       ; 24 blank lines
            .byte $44,$00,$80       ; Mode 4 + LMS + address
            .byte $64,$00,$80       ; Mode 4 + VSCROLL + LMS + address
@@ -684,7 +684,7 @@ Note that the ``VSCROL`` hardware register is set to zero. Here's the display li
            .byte $24,$24,$24,$24,$24
            .byte $42,<static_text, >static_text ; 2 Mode 2 lines + LMS + address
            .byte $2
-           .byte $41,<dlist_course_mode4,>dlist_course_mode4 ; JVB ends display list
+           .byte $41,<dlist_coarse_mode4,>dlist_coarse_mode4 ; JVB ends display list
 
 So what is the mystery of the (mostly) missing mode 2 line at the bottom? ANTIC
 uses the first scan line that doesn't have the vertical scrolling bit set as a
@@ -762,8 +762,8 @@ changed: the final ``$24`` in the previous example is changed to a normal mode
 
 .. code-block::
 
-   ; Simple display list to be used as course scrolling comparison
-   dlist_course_mode4
+   ; Simple display list to be used as coarse scrolling comparison
+   dlist_coarse_mode4
            .byte $70,$70,$70       ; 24 blank lines
            .byte $44,$00,$80       ; Mode 4 + LMS + address
            .byte $64,$00,$80       ; Mode 4 + VSCROLL + LMS + address
@@ -773,7 +773,7 @@ changed: the final ``$24`` in the previous example is changed to a normal mode
            .byte 4                 ; and the final Mode 4 without VSCROLL
            .byte $42,<static_text, >static_text ; 2 Mode 2 lines + LMS + address
            .byte $2
-           .byte $41,<dlist_course_mode4,>dlist_course_mode4 ; JVB ends display list
+           .byte $41,<dlist_coarse_mode4,>dlist_coarse_mode4 ; JVB ends display list
 
 This leaves the status lines with two complete mode 2 lines, and the scrolling
 playfield as 21 mode 4 lines, and a one line *buffer zone*, this time of mode
@@ -788,7 +788,7 @@ vertical scrolling bits.
 Example: Fine Scrolling Down
 -------------------------------
 
-We can now add the ``VSCROL`` hardware register to the course scrolling demo to
+We can now add the ``VSCROL`` hardware register to the coarse scrolling demo to
 produce fine scrolling:
 
 .. figure:: fine_scroll_down.png
@@ -802,8 +802,8 @@ produce fine scrolling:
    <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_scroll_down.xex">fine_scroll_down.xex</a></li>
    </ul>
 
-The code for this example is largely the same as the :ref:`course scroll down
-<course_scroll_down>` demo, which a few minor additions. We need one
+The code for this example is largely the same as the :ref:`coarse scroll down
+<coarse_scroll_down>` demo, which a few minor additions. We need one
 additional variable to keep our own copy of the hardware scrolling register,
 since ``VSCROL`` is a write-only register:
 
@@ -820,7 +820,7 @@ The ``init`` code from the demo also needs to initialize the variable:
            sta vert_scroll
            sta VSCROL      ; initialize hardware register
 
-and the main loop calls the fine scrolling routine instead of the course
+and the main loop calls the fine scrolling routine instead of the coarse
 scrolling routine.
 
 .. code-block::
@@ -839,8 +839,8 @@ scrolling routine.
 
 The ``fine_scroll_down`` routine takes care of updating the fine scrolling
 variable and setting the hardware ``VSCROL`` register. If it has scrolled 8
-scan lines, it calls the ``course_scroll_down`` routine, which is unchanged
-from the course scrolling demo.
+scan lines, it calls the ``coarse_scroll_down`` routine, which is unchanged
+from the coarse scrolling demo.
 
 .. code-block::
 
@@ -848,9 +848,9 @@ from the course scrolling demo.
    fine_scroll_down
            inc vert_scroll
            lda vert_scroll
-           cmp #vert_scroll_max ; check to see if we need to do a course scroll
+           cmp #vert_scroll_max ; check to see if we need to do a coarse scroll
            bcc ?done       ; nope, still in the middle of the character
-           jsr course_scroll_down ; yep, do a course scroll...
+           jsr coarse_scroll_down ; yep, do a coarse scroll...
            lda #0          ;  ...followed by reseting the vscroll register
            sta vert_scroll
    ?done   sta VSCROL      ; store vertical scroll value in hardware register
@@ -878,7 +878,7 @@ The delay loop is the same, just calling the subroutine to do a fine scroll up
 instead of down. The logic does change a little bit, as we are now decrementing
 the ``vert_scroll`` variable. Since zero is a valid value for the ``VSCROL``
 hardware register, we check to see when the decrement wraps back to ``$ff`` to
-determine if a course scroll needs to happen:
+determine if a coarse scroll needs to happen:
 
 .. code-block::
 
@@ -887,7 +887,7 @@ determine if a course scroll needs to happen:
            dec vert_scroll
            lda vert_scroll
            bpl ?done       ; if non-negative, still in the middle of the character
-           jsr course_scroll_up   ; wrapped to $ff, do a course scroll...
+           jsr coarse_scroll_up   ; wrapped to $ff, do a coarse scroll...
            lda #vert_scroll_max-1 ;  ...followed by reseting the vscroll register
            sta vert_scroll
    ?done   sta VSCROL      ; store vertical scroll value in hardware register

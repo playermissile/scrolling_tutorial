@@ -61,7 +61,7 @@ fillscreen_parallax
 ;
 ; fill two groups of lines, each group 40 bytes each of A-Z
 ;
-fillscreen_course_test_pattern
+fillscreen_coarse_test_pattern
         ldy #0
 ?loop   lda #$41
         sta $8000,y
@@ -409,7 +409,7 @@ fillscreen_scroll
 
         *= (* & $ff00) + 256 ; next page boundary
 
-; one page per line, used for course scrolling. Start visible region
+; one page per line, used for coarse scrolling. Start visible region
 ; in middle of each page so it can scroll either right or left immediately
 ; without having to check for a border
 dlist_lms_mode4

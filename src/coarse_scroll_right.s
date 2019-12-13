@@ -24,13 +24,13 @@ loop
         bpl ?start
 
         ; enough time has passed, scroll one line
-        jsr course_scroll_right
+        jsr coarse_scroll_right
 
         jmp loop
 
 ; move viewport one byte to the right by pointing each display list start
 ; address to one byte higher in memory
-course_scroll_right
+coarse_scroll_right
         ldy #22         ; 22 lines to modify
         ldx #4          ; 4th byte after start of display list is low byte of address
 ?loop   inc dlist_lms_mode4,x

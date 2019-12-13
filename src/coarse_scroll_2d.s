@@ -69,14 +69,14 @@ loop
         sta vert_dir
 
         ; directions are ok, now perform the scroll
-?scroll jsr course_scroll_horz
-        jsr course_scroll_vert
+?scroll jsr coarse_scroll_horz
+        jsr coarse_scroll_vert
 
         jmp loop
 
 ; move viewport one byte to the left/right by pointing each display list
 ; address to one lower/byte higher in memory (i.e. changing low byte)
-course_scroll_horz
+coarse_scroll_horz
         ldy #22         ; 22 lines to modify
         ldx #0
         lda horz_dir
@@ -100,7 +100,7 @@ course_scroll_horz
 
 ; move viewport one line up/down by pointing each display list address
 ; one *page* lower/byte higher in memory (i.e. changing high byte)
-course_scroll_vert
+coarse_scroll_vert
         ldy #22         ; 22 lines to modify
         ldx #0
         lda vert_dir

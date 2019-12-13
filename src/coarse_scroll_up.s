@@ -6,11 +6,11 @@
 init
         jsr init_font
 
-        lda #<dlist_course_mode4
+        lda #<dlist_coarse_mode4
         sta SDLSTL
-        lda #>dlist_course_mode4
+        lda #>dlist_coarse_mode4
         sta SDLSTL+1
-        jsr fillscreen_course_test_pattern
+        jsr fillscreen_coarse_test_pattern
 ;        lda #$80
 ;        ldx #24
 ;        jsr label_pages
@@ -24,34 +24,34 @@ loop
         bpl ?start
 
         ; enough time has passed, scroll one line
-        jsr course_scroll_up
+        jsr coarse_scroll_up
 
         jmp loop
 
 ; move viewport one line down by pointing display list start address
 ; to the address 40 bytes further in memory
-course_scroll_up
+coarse_scroll_up
         sec
-        lda dlist_course_address
+        lda dlist_coarse_address
         sbc #40
-        sta dlist_course_address
-        lda dlist_course_address+1
+        sta dlist_coarse_address
+        lda dlist_coarse_address+1
         sbc #0
-        sta dlist_course_address+1
+        sta dlist_coarse_address+1
         rts
 
-; Simple display list to be used as course scrolling comparison
-dlist_course_mode4
+; Simple display list to be used as coarse scrolling comparison
+dlist_coarse_mode4
         .byte $70,$70,$70       ; 24 blank lines
         .byte $44               ; Mode 4 + LMS
-dlist_course_address
+dlist_coarse_address
         .byte $b0,$84           ; screen address
         .byte 4,4,4,4,4,4,4,4   ; 21 more Mode 4 lines
         .byte 4,4,4,4,4,4,4,4
         .byte 4,4,4,4,4
         .byte $42,<static_text, >static_text ; 2 Mode 2 lines + LMS + address
         .byte $2
-        .byte $41,<dlist_course_mode4,>dlist_course_mode4 ; JVB ends display list
+        .byte $41,<dlist_coarse_mode4,>dlist_coarse_mode4 ; JVB ends display list
 
         ;             0123456789012345678901234567890123456789
 static_text

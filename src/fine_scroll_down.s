@@ -10,11 +10,11 @@ vert_scroll_max = 8     ; ANTIC mode 4 has 8 scan lines
 init
         jsr init_font
 
-        lda #<dlist_course_mode4
+        lda #<dlist_coarse_mode4
         sta SDLSTL
-        lda #>dlist_course_mode4
+        lda #>dlist_coarse_mode4
         sta SDLSTL+1
-        jsr fillscreen_course_test_pattern
+        jsr fillscreen_coarse_test_pattern
 
         lda #0          ; initialize vertical scrolling value
         sta vert_scroll
@@ -36,9 +36,9 @@ loop    ldx #delay      ; number of VBLANKs to wait
 fine_scroll_down
         inc vert_scroll
         lda vert_scroll
-        cmp #vert_scroll_max ; check to see if we need to do a course scroll
+        cmp #vert_scroll_max ; check to see if we need to do a coarse scroll
         bcc ?done       ; nope, still in the middle of the character
-        jsr course_scroll_down ; yep, do a course scroll...
+        jsr coarse_scroll_down ; yep, do a coarse scroll...
         lda #0          ;  ...followed by reseting the vscroll register
         sta vert_scroll
 ?done   sta VSCROL      ; store vertical scroll value in hardware register
@@ -46,21 +46,21 @@ fine_scroll_down
 
 ; move viewport one line down by pointing display list start address
 ; to the address 40 bytes further in memory
-course_scroll_down
+coarse_scroll_down
         clc
-        lda dlist_course_address
+        lda dlist_coarse_address
         adc #40
-        sta dlist_course_address
-        lda dlist_course_address+1
+        sta dlist_coarse_address
+        lda dlist_coarse_address+1
         adc #0
-        sta dlist_course_address+1
+        sta dlist_coarse_address+1
         rts
 
-; Simple display list to be used as course scrolling comparison
-dlist_course_mode4
+; Simple display list to be used as coarse scrolling comparison
+dlist_coarse_mode4
         .byte $70,$70,$70       ; 24 blank lines
         .byte $64               ; Mode 4 + VSCROLL + LMS
-dlist_course_address
+dlist_coarse_address
         .byte $00,$80           ; screen address
         .byte $24,$24,$24,$24,$24,$24,$24,$24   ; 20 more Mode 4 + VSCROLL lines
         .byte $24,$24,$24,$24,$24,$24,$24,$24
@@ -68,7 +68,7 @@ dlist_course_address
         .byte 4                 ; and the final Mode 4 without VSCROLL
         .byte $42,<static_text, >static_text ; 2 Mode 2 lines + LMS + address
         .byte $2
-        .byte $41,<dlist_course_mode4,>dlist_course_mode4 ; JVB ends display list
+        .byte $41,<dlist_coarse_mode4,>dlist_coarse_mode4 ; JVB ends display list
 
         ;             0123456789012345678901234567890123456789
 static_text
