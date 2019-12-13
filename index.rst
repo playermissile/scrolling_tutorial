@@ -818,6 +818,7 @@ The ``init`` code from the demo also needs to initialize the variable:
 
            lda #0          ; initialize vertical scrolling value
            sta vert_scroll
+           sta VSCROL      ; initialize hardware register
 
 and the main loop calls the fine scrolling routine instead of the course
 scrolling routine.
@@ -843,7 +844,7 @@ from the course scrolling demo.
 
 .. code-block::
 
-   ; scroll one scan line down and check if at HSCROL limit
+   ; scroll one scan line down and check if at VSCROL limit
    fine_scroll_down
            inc vert_scroll
            lda vert_scroll
@@ -872,6 +873,29 @@ The code for fine scrolling the viewport up has very few changes from the above.
    <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/fine_scroll_up.s">fine_scroll_up.s</a></li>
    <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_scroll_up.xex">fine_scroll_up.xex</a></li>
    </ul>
+
+The delay loop is the same, just calling the subroutine to do a fine scroll up
+instead of down. The logic does change a little bit, as we are now decrementing
+the ``vert_scroll`` variable. Since zero is a valid value for the ``VSCROL``
+hardware register, we check to see when the decrement wraps back to ``$ff`` to
+determine if a course scroll needs to happen:
+
+.. code-block::
+
+   ; scroll one scan line up and check if at VSCROL limit
+   fine_scroll_up
+           dec vert_scroll
+           lda vert_scroll
+           bpl ?done       ; if non-negative, still in the middle of the character
+           jsr course_scroll_up   ; wrapped to $ff, do a course scroll...
+           lda #vert_scroll_max-1 ;  ...followed by reseting the vscroll register
+           sta vert_scroll
+   ?done   sta VSCROL      ; store vertical scroll value in hardware register
+           rts
+
+The only other change is pointing the initial display list ``LMS`` address to a
+line further down in the memory layout so there is scrolling room as the
+viewport moves up.
 
 
 

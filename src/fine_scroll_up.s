@@ -28,31 +28,30 @@ loop    ldx #delay      ; number of VBLANKs to wait
         bpl ?start
 
         ; enough time has passed, scroll one scan line
-        jsr fine_scroll_down
+        jsr fine_scroll_up
 
         jmp loop
 
-; scroll one scan line down and check if at VSCROL limit
-fine_scroll_down
-        inc vert_scroll
+; scroll one scan line up and check if at VSCROL limit
+fine_scroll_up
+        dec vert_scroll
         lda vert_scroll
-        cmp #vert_scroll_max ; check to see if we need to do a course scroll
-        bcc ?done       ; nope, still in the middle of the character
-        jsr course_scroll_down ; yep, do a course scroll...
-        lda #0          ;  ...followed by reseting the vscroll register
+        bpl ?done       ; if non-negative, still in the middle of the character
+        jsr course_scroll_up   ; wrapped to $ff, do a course scroll...
+        lda #vert_scroll_max-1 ;  ...followed by reseting the vscroll register
         sta vert_scroll
 ?done   sta VSCROL      ; store vertical scroll value in hardware register
         rts
 
 ; move viewport one line down by pointing display list start address
 ; to the address 40 bytes further in memory
-course_scroll_down
-        clc
+course_scroll_up
+        sec
         lda dlist_course_address
-        adc #40
+        sbc #40
         sta dlist_course_address
         lda dlist_course_address+1
-        adc #0
+        sbc #0
         sta dlist_course_address+1
         rts
 
@@ -61,7 +60,7 @@ dlist_course_mode4
         .byte $70,$70,$70       ; 24 blank lines
         .byte $64               ; Mode 4 + VSCROLL + LMS
 dlist_course_address
-        .byte $00,$80           ; screen address
+        .byte $10,$84           ; screen address, starting in middle of memory layout
         .byte $24,$24,$24,$24,$24,$24,$24,$24   ; 20 more Mode 4 + VSCROLL lines
         .byte $24,$24,$24,$24,$24,$24,$24,$24
         .byte $24,$24,$24,$24
