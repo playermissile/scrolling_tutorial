@@ -32,7 +32,11 @@ this tutorial, the version built-in to `Omnivore
 
 .. note:: All source code and XEX files are available in the `scrolling_tutorial source code repository <https://github.com/playermissile/scrolling_tutorial>`_ on github.
 
+.. seealso::
 
+   Here are some resources for learning more about scrolling:
+
+   * `Atari Graphics & Arcade Game Design, Chapter 7 <https://archive.org/details/ataribooks-atari-graphics-and-arcade-game-design/page/n221>`_
 
 A Refresher on Display Lists
 --------------------------------------------
@@ -738,6 +742,11 @@ buffer zone, that is: the first display list line without the scroll bit set,
 is rendered *through* scan line 4 as enumerated from zero, so scan lines 0, 1,
 2, 3, and 4. Scan lines 5 through 7 are not rendered.
 
+.. seealso::
+
+   * Section 4.7 in the `Altirra Hardware Reference Manual <http://www.virtualdub.org/downloads/Altirra%20Hardware%20Reference%20Manual.pdf>`_
+   * `De Re Atari, Chapter 2 <https://www.atariarchives.org/dere/chapt02.php>`_
+
 
 Fixing the Last Scrolled Line
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1034,6 +1043,10 @@ The value of ``HSCROL`` is the number of color clocks to scroll the viewport to
 the left. Equivalently, you can think of it as the number of color clocks in
 the left side buffer zone that are shifted to the right into the visible area.
 
+.. seealso::
+
+   * Section 4.7 in the `Altirra Hardware Reference Manual <http://www.virtualdub.org/downloads/Altirra%20Hardware%20Reference%20Manual.pdf>`_
+   * `De Re Atari, Chapter 2 <https://www.atariarchives.org/dere/chapt02.php>`_
 
 Interlude: Vertical Blank Interrupts
 ------------------------------------------------
