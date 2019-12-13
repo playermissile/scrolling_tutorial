@@ -1002,9 +1002,9 @@ playfield, and scrolling a normal playfield will be processed as if it were a
 wide 48 byte playfield.
 
 It uses these extra bytes as the scrolling *buffer zone*, the horizontal
-equivalent of the vertical `buffer zone <vscroll>` that takes scan lines from
-the first display list instruction with the vertical scroll bit cleared after a
-scrolling section.
+equivalent of the vertical :ref:`buffer zone <vscroll>` that takes scan lines
+from the first display list instruction with the vertical scroll bit cleared
+after a scrolling section.
 
 Each playfield expansion results in 8 extra bytes of data being read. They are
 distributed with 4 bytes to the left of the playfield and 4 bytes to the right.
