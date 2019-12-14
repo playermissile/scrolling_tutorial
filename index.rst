@@ -1193,7 +1193,7 @@ line."
 
 Other unexpected effects like screen tearing could occur if changes happen to
 the hardware registers while ANTIC is drawing the scrolling region. There are
-cases, for instance :ref:`parallax scrolling <parallax_scrolling>`` and
+cases, for instance :ref:`parallax scrolling <parallax_scrolling>` and
 multiple independent scrolling regions where it is desired that the registers
 be changed mid-screen, but these will be performed in a DLI where the change
 can occur on a particular scanline and during the horizontal blank.
