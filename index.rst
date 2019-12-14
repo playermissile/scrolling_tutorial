@@ -1048,6 +1048,123 @@ the left side buffer zone that are shifted to the right into the visible area.
    * Section 4.7 in the `Altirra Hardware Reference Manual <http://www.virtualdub.org/downloads/Altirra%20Hardware%20Reference%20Manual.pdf>`_
    * `De Re Atari, Chapter 2 <https://www.atariarchives.org/dere/chapt02.php>`_
 
+
+Example: Fine Scrolling Left
+-------------------------------
+
+We can now add the ``HSCROL`` hardware register to the coarse scrolling demo to
+produce fine scrolling:
+
+.. figure:: fine_scroll_left.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/fine_scroll_left.s">fine_scroll_left.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_scroll_left.xex">fine_scroll_left.xex</a></li>
+   </ul>
+
+The code for this example is largely the same as the :ref:`coarse scroll down
+<coarse_scroll_left>` demo, and like the vertical fine scrolling examples we
+need one additional variable to keep our own copy of the hardware scrolling
+register, since ``HSCROL`` is a write-only register:
+
+.. code-block::
+
+   horz_scroll = $91       ; variable used to store HSCROL value
+   horz_scroll_max = 4     ; ANTIC mode 4 has 4 color clocks
+
+The ``init`` code from the demo also needs to initialize the variable:
+
+.. code-block::
+
+           lda #0          ; initialize horizontal scrolling value
+           sta horz_scroll
+           sta HSCROL      ; initialize hardware register
+
+and the main loop calls the fine scrolling routine instead of the coarse
+scrolling routine.
+
+.. code-block::
+
+   loop    ldx #15         ; number of VBLANKs to wait
+   ?start  lda RTCLOK+2    ; check fastest moving RTCLOCK byte
+   ?wait   cmp RTCLOK+2    ; VBLANK will update this
+           beq ?wait       ; delay until VBLANK changes it
+           dex             ; delay for a number of VBLANKs
+           bpl ?start
+   
+           ; enough time has passed, scroll one color clock
+           jsr fine_scroll_left
+   
+           jmp loop
+
+The ``fine_scroll_left`` routine update the fine scrolling variable and setting
+the hardware ``HSCROL`` register. If it has scrolled 4 color clocks, it calls
+the ``coarse_scroll_left`` routine, which is unchanged from the coarse
+scrolling demo.
+
+.. code-block::
+
+   ; scroll one color clock left and check if at HSCROL limit
+   fine_scroll_left
+           inc horz_scroll
+           lda horz_scroll
+           cmp #horz_scroll_max ; check to see if we need to do a coarse scroll
+           bcc ?done       ; nope, still in the middle of the character
+           jsr coarse_scroll_left ; yep, do a coarse scroll...
+           lda #0          ;  ...followed by reseting the HSCROL register
+           sta horz_scroll
+   ?done   sta HSCROL      ; store vertical scroll value in hardware register
+           rts
+
+But notice the difference between vertical scrolling and horizontal scrolling:
+For horizontal scrolling, *incrementing* the HSCROL value performs fine
+scrolling of the viewport to the left, but the course scrolling requires
+*decrementing* the ``LMS`` addresses.
+
+.. code-block::
+
+   ; move viewport one byte to the left by pointing each display list start
+   ; address to one byte lower in memory
+   coarse_scroll_left
+           ldy #22         ; 22 lines to modify
+           ldx #4          ; 4th byte after start of display list is low byte of address
+   ?loop   dec dlist_hscroll_mode4,x
+           inx             ; skip to next low byte which is 3 bytes away
+           inx
+           inx
+           dey
+           bne ?loop
+           rts
+
+
+
+Example: Fine Scrolling Right
+---------------------------------------
+
+The code for fine scrolling the viewport to the right has only minor
+differences from the above.
+
+.. figure:: fine_scroll_right.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/fine_scroll_right.s">fine_scroll_right.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_scroll_right.xex">fine_scroll_right.xex</a></li>
+   </ul>
+
+The changes in the code are: the variable ``vert_scroll`` is decremented in the
+fine scrolling subroutine, and the ``LMS`` addresses in the course scrolling
+subroutine is incremented.
+
+
+
 Interlude: Vertical Blank Interrupts
 ------------------------------------------------
 
@@ -1091,6 +1208,19 @@ mid-screen changes.
 
 Combined Fine Scrolling
 --------------------------------------------------
+
+Notice the difference between vertical scrolling and horizontal scrolling: For
+horizontal scrolling, *incrementing* the ``HSCROL`` value performs fine
+scrolling of the viewport to the left, but the course scrolling left requires
+*decrementing* the ``LMS`` addresses.
+
+In vertical scrolling, *incrementing* the ``VSCROL`` value performs fine
+scrolling of the viewport down, and the course scrolling down also requires
+*incrementing* the ``LMS`` addresses.
+
+So, horizontal scrolling has the hardware register and the ``LMS`` addresses
+requiring opposite mathematical operations, while vertical scrolling sees the
+hardware register and LMS addresses changing in the same direction.
 
 
 Preparing the Display List

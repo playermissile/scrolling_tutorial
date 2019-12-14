@@ -15,6 +15,8 @@ BINS = xex/coarse_vscroll_dlist.xex \
 	xex/memory_layout_hscroll.xex \
 	xex/fine_hscroll_dlist.xex \
 	xex/fine_hscroll_6.xex \
+	xex/fine_scroll_left.xex \
+	xex/fine_scroll_right.xex \
 	xex/no_scrolling_dlist.xex \
 	xex/vertical_scrolling_dlist.xex
 
@@ -67,6 +69,12 @@ xex/fine_hscroll_dlist.xex: src/fine_hscroll_dlist.s src/util_font.s src/util_sc
 	atasm -mae -Isrc -o$@ -L$<.var -g$<.lst $<
 
 xex/fine_hscroll_6.xex: src/fine_hscroll_6.s src/util_font.s src/util_scroll.s src/font_data_antic4.s
+	atasm -mae -Isrc -o$@ -L$<.var -g$<.lst $<
+
+xex/fine_scroll_left.xex: src/fine_scroll_left.s src/util_font.s src/util_scroll.s src/font_data_antic4.s
+	atasm -mae -Isrc -o$@ -L$<.var -g$<.lst $<
+
+xex/fine_scroll_right.xex: src/fine_scroll_right.s src/util_font.s src/util_scroll.s src/font_data_antic4.s
 	atasm -mae -Isrc -o$@ -L$<.var -g$<.lst $<
 
 xex/coarse_vscroll_dlist.xex: src/coarse_vscroll_dlist.s src/util_font.s src/util_scroll.s src/font_data_antic4.s
