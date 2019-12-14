@@ -16,6 +16,7 @@ BINS = xex/coarse_vscroll_dlist.xex \
 	xex/fine_hscroll_dlist.xex \
 	xex/fine_hscroll_6.xex \
 	xex/fine_scroll_left.xex \
+	xex/fine_scroll_left_wide.xex \
 	xex/fine_scroll_right.xex \
 	xex/no_scrolling_dlist.xex \
 	xex/vertical_scrolling_dlist.xex
@@ -72,6 +73,9 @@ xex/fine_hscroll_6.xex: src/fine_hscroll_6.s src/util_font.s src/util_scroll.s s
 	atasm -mae -Isrc -o$@ -L$<.var -g$<.lst $<
 
 xex/fine_scroll_left.xex: src/fine_scroll_left.s src/util_font.s src/util_scroll.s src/font_data_antic4.s
+	atasm -mae -Isrc -o$@ -L$<.var -g$<.lst $<
+
+xex/fine_scroll_left_wide.xex: src/fine_scroll_left_wide.s src/util_font.s src/util_scroll.s src/font_data_antic4.s
 	atasm -mae -Isrc -o$@ -L$<.var -g$<.lst $<
 
 xex/fine_scroll_right.xex: src/fine_scroll_right.s src/util_font.s src/util_scroll.s src/font_data_antic4.s
