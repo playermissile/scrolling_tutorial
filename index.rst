@@ -1164,6 +1164,102 @@ fine scrolling subroutine, and the ``LMS`` addresses in the course scrolling
 subroutine is incremented.
 
 
+Example: Fine Scrolling with Wide Playfield
+-----------------------------------------------
+
+Since ANTIC expands the playfield to the next larger size when reading data for
+the scrolling region, there's no real additional cost to also displaying the
+wider playfield. ANTIC is stealing the cycles as if it were the larger
+playfield anyway, we might as well see it:
+
+.. figure:: fine_scroll_right_wide.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/fine_scroll_right_wide.s">fine_scroll_right_wide.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_scroll_right_wide.xex">fine_scroll_right_wide.xex</a></li>
+   </ul>
+
+The only change to the example above is setting the DMA control variable:
+
+.. code-block::
+   
+           lda #$23        ; enable wide playfield
+           sta SDMCTL      ;   by saving to shadow register
+
+which sets the wide playfield bits forcing the display of the 48 byte wide
+playfield. But notice how the non-scrolling status area is now also 48 bytes
+wide, changing the text to wrap 8 bytes from the 2nd line onto the first.
+
+
+
+Interlude: Display List Interrupts
+------------------------------------------------
+
+Display list interrupts (DLIs) provide a notification to your program when
+ANTIC is about to process a particular scan line. By setting a bit on the
+display list instruction, ANTIC will interrupt the normal CPU processing and
+send control through a special vector that you can use to perform actions at
+vertical locations on the screen. See my :ref:`complete(ish)
+tutorial<dli_tutorial>` for lots more information.
+
+
+Example: Wide Scrolling Playfield with Normal Status Lines
+----------------------------------------------------------------
+
+Using a simple DLI we can force the status lines back to their normal 40 byte
+width:
+
+.. figure:: fine_scroll_right_wide_dli.png
+   :align: center
+   :width: 90%
+
+.. raw:: html
+
+   <ul>
+   <li><b>Source Code:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/fine_scroll_right_wide_dli.s">fine_scroll_right_wide_dli.s</a></li>
+   <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_scroll_right_wide_dli.xex">fine_scroll_right_wide_dli.xex</a></li>
+   </ul>
+
+The DLI bit must be set on the display list instruction immediately before the
+status line:
+
+.. code-block::
+   
+           .byte $d4,$70,$95       ; last line in scrolling region + DLI
+
+the DLI vector must be set to our routine and activated:
+
+.. code-block::
+
+           ; load display list interrupt address
+           lda #<dli
+           sta VDSLST
+           lda #>dli
+           sta VDSLST+1
+   
+           ; activate display list interrupt
+           lda #NMIEN_VBI | NMIEN_DLI
+           sta NMIEN
+
+and finally the DLI routine itself
+
+.. code-block::
+   
+   dli     pha             ; only using A register, so save old value to the stack
+           lda #$22        ; normal playfield width
+           sta WSYNC       ; any value saved to WSYNC will trigger the pause
+           sta DMACTL      ; store it in the hardware register
+           pla             ; restore the A register
+           rti             ; always end DLI with RTI!
+
+which sets the normal playfield width using the hardware register. At the
+vertical blank, the shadow register will be copied to the hardware register
+which will return the scrolling portion of the playfield back to 48 bytes wide.
+
 
 Interlude: Vertical Blank Interrupts
 ------------------------------------------------

@@ -469,6 +469,7 @@ dlist_hscroll_mode4
         .byte $54,$70,$92
         .byte $54,$70,$93
         .byte $54,$70,$94
+dlist_hscroll_mode4_last_scrolling_line
         .byte $54,$70,$95       ; last line in scrolling region
         .byte $42,<footer_text, >footer_text ; 2 Mode 2 lines + LMS + address
         .byte $2

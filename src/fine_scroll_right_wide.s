@@ -34,28 +34,27 @@ loop    ldx #delay      ; number of VBLANKs to wait
         bpl ?start
 
         ; enough time has passed, scroll one color clock
-        jsr fine_scroll_left
+        jsr fine_scroll_right
 
         jmp loop
 
-; scroll one color clock left and check if at HSCROL limit
-fine_scroll_left
-        inc horz_scroll
+; scroll one color clock right and check if at HSCROL limit
+fine_scroll_right
+        dec horz_scroll
         lda horz_scroll
-        cmp #horz_scroll_max ; check to see if we need to do a coarse scroll
-        bcc ?done       ; nope, still in the middle of the character
-        jsr coarse_scroll_left ; yep, do a coarse scroll...
-        lda #0          ;  ...followed by reseting the HSCROL register
+        bpl ?done       ; if non-negative, still in the middle of the character
+        jsr coarse_scroll_right ; wrapped to $ff, do a coarse scroll...
+        lda #horz_scroll_max-1  ;  ...followed by reseting the HSCROL register
         sta horz_scroll
 ?done   sta HSCROL      ; store vertical scroll value in hardware register
         rts
 
-; move viewport one byte to the left by pointing each display list start
-; address to one byte lower in memory
-coarse_scroll_left
+; move viewport one byte to the right by pointing each display list start
+; address to one byte higher in memory
+coarse_scroll_right
         ldy #22         ; 22 lines to modify
         ldx #4          ; 4th byte after start of display list is low byte of address
-?loop   dec dlist_hscroll_mode4,x
+?loop   inc dlist_hscroll_mode4,x
         inx             ; skip to next low byte which is 3 bytes away
         inx
         inx
