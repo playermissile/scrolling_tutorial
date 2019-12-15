@@ -1211,7 +1211,7 @@ Example: Wide Scrolling Playfield with Normal Status Lines
 ----------------------------------------------------------------
 
 Using a simple DLI we can force the status lines back to their normal 40 byte
-width:
+width. This is a freeze-frame image showing that effect:
 
 .. figure:: fine_scroll_right_wide_dli.png
    :align: center
@@ -1229,7 +1229,7 @@ status line:
 
 .. code-block::
    
-           .byte $d4,$70,$95       ; last line in scrolling region + DLI
+           .byte $d4,$70,$95       ; last line in scrolling region: HSCROLL + DLI
 
 the DLI vector must be set to our routine and activated:
 
@@ -1256,9 +1256,12 @@ and finally the DLI routine itself
            pla             ; restore the A register
            rti             ; always end DLI with RTI!
 
-which sets the normal playfield width using the hardware register. At the
-vertical blank, the shadow register will be copied to the hardware register
-which will return the scrolling portion of the playfield back to 48 bytes wide.
+which sets the normal playfield width using the hardware register, which takes
+effect immediately. Recall that changes to the hardware registers produce
+immediate effect, while the shadow registers are restored at the vertical blank
+by the operating system. Therefore we do not have to restore the playfield
+width ourselves thanks to our use of the shadow register. The operating system
+will return the scrolling portion of the playfield back to 48 bytes wide.
 
 
 Interlude: Vertical Blank Interrupts
