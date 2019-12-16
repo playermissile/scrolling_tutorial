@@ -404,6 +404,14 @@ fillscreen_scroll
 ;
 ; display lists
 ;
+
+        ;             0123456789012345678901234567890123456789
+footer_text
+        .sbyte +$80, " ANTIC MODE 2, NOT SCROLLED, FIRST LINE "
+footer_text_line_2
+        .sbyte       " ANTIC MODE 2, NOT SCROLLED, SECOND LINE"
+
+
 ; NOTE: start display lists on a page boundary to avoid the possibility
 ; that it might be split over a 4K boundary
 
@@ -441,8 +449,6 @@ dlist_lms_mode4
         .byte $41,<dlist_lms_mode4,>dlist_lms_mode4 ; JVB ends display list
 
 
-        *= (* & $ff00) + 256 ; next page boundary
-
 ; one page per line, used for coarse scrolling. Start visible region
 ; in middle of each page so it can scroll either right or left immediately
 ; without having to check for a border
@@ -475,11 +481,50 @@ dlist_hscroll_mode4_last_scrolling_line
         .byte $2
         .byte $41,<dlist_hscroll_mode4,>dlist_hscroll_mode4 ; JVB ends display list
 
-        ;             0123456789012345678901234567890123456789
-footer_text
-        .sbyte +$80, " ANTIC MODE 2, NOT SCROLLED, FIRST LINE "
-        .sbyte       " ANTIC MODE 2, NOT SCROLLED, SECOND LINE"
 
+        *= (* & $ff00) + 256 ; next page boundary
+
+; one page per line, used for full 2d fine scrolling. Start visible region
+; in middle of each page so it can scroll either right or left immediately
+; without having to check for a border
+dlist_2d_mode4
+        .byte $70,$70,$70
+        .byte $74,$70,$80       ; first line of scrolling region, VSCROLL + HSCROLL
+        .byte $74,$70,$81
+        .byte $74,$70,$82
+        .byte $74,$70,$83
+        .byte $74,$70,$84
+        .byte $74,$70,$85
+        .byte $74,$70,$86
+        .byte $74,$70,$87
+        .byte $74,$70,$88
+        .byte $74,$70,$89
+        .byte $74,$70,$8a
+        .byte $74,$70,$8b
+        .byte $74,$70,$8c
+        .byte $74,$70,$8d
+        .byte $74,$70,$8e
+        .byte $74,$70,$8f
+        .byte $74,$70,$90
+        .byte $74,$70,$91
+        .byte $74,$70,$92
+        .byte $74,$70,$93
+        .byte $74,$70,$94
+dlist_2d_mode4_last_scrolling_line
+        .byte $54,$70,$95       ; last line in scrolling region, HSCROLL only
+dlist_2d_mode4_status_line1
+        .byte $42,<joystick_text, >joystick_text ; Mode 2 + LMS + address
+dlist_2d_mode4_status_line2
+        .byte $42,<normal_text, >normal_text ; Mode 2 + LMS + address
+        .byte $41,<dlist_2d_mode4,>dlist_2d_mode4 ; JVB ends display list
+
+        ;             0123456789012345678901234567890123456789
+joystick_text
+        .sbyte +$80, " SCROLL WITH JOYSTICK HSCROL=0 VSCROL=0 "
+normal_text
+        .sbyte       " PRESS OPTION FOR WIDE PLAYFIELD        "
+wide_text
+        .sbyte       " PRESS OPTION FOR NORMAL PLAYFIELD      "
 
         *= (* & $ff00) + 256 ; next page boundary
 

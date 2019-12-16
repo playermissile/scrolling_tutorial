@@ -19,6 +19,8 @@ BINS = xex/coarse_vscroll_dlist.xex \
 	xex/fine_scroll_right.xex \
 	xex/fine_scroll_right_wide.xex \
 	xex/fine_scroll_right_wide_dli.xex \
+	xex/fine_scroll_2d_dlist.xex \
+	xex/fine_scroll_2d_joystick.xex \
 	xex/no_scrolling_dlist.xex \
 	xex/vertical_scrolling_dlist.xex
 
@@ -83,6 +85,12 @@ xex/fine_scroll_right_wide.xex: src/fine_scroll_right_wide.s src/util_font.s src
 	atasm -mae -Isrc -o$@ -L$<.var -g$<.lst $<
 
 xex/fine_scroll_right_wide_dli.xex: src/fine_scroll_right_wide_dli.s src/util_font.s src/util_scroll.s src/font_data_antic4.s
+	atasm -mae -Isrc -o$@ -L$<.var -g$<.lst $<
+
+xex/fine_scroll_2d_dlist.xex: src/fine_scroll_2d_dlist.s src/util_font.s src/util_scroll.s src/font_data_antic4.s
+	atasm -mae -Isrc -o$@ -L$<.var -g$<.lst $<
+
+xex/fine_scroll_2d_joystick.xex: src/fine_scroll_2d_joystick.s src/util_font.s src/util_scroll.s src/font_data_antic4.s
 	atasm -mae -Isrc -o$@ -L$<.var -g$<.lst $<
 
 xex/coarse_vscroll_dlist.xex: src/coarse_vscroll_dlist.s src/util_font.s src/util_scroll.s src/font_data_antic4.s
