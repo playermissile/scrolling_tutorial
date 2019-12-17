@@ -516,6 +516,8 @@ dlist_2d_mode4_status_line1
         .byte $42,<joystick_text, >joystick_text ; Mode 2 + LMS + address
 dlist_2d_mode4_status_line2
         .byte $42,<normal_text, >normal_text ; Mode 2 + LMS + address
+dlist_2d_mode4_status_line3
+        .byte $42,<x1_text, >x1_text ; Mode 2 + LMS + address
         .byte $41,<dlist_2d_mode4,>dlist_2d_mode4 ; JVB ends display list
 
         ;             0123456789012345678901234567890123456789
@@ -525,6 +527,10 @@ normal_text
         .sbyte       " PRESS OPTION FOR WIDE PLAYFIELD        "
 wide_text
         .sbyte       " PRESS OPTION FOR NORMAL PLAYFIELD      "
+x1_text
+        .sbyte       " PRESS SELECT FOR VSCROLL SPEED X 2     "
+x2_text
+        .sbyte       " PRESS SELECT FOR VSCROLL SPEED X 1     "
 
         *= (* & $ff00) + 256 ; next page boundary
 

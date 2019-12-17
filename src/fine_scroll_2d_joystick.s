@@ -15,6 +15,7 @@ pressed = $a0           ; user still pressing button?
 latest_joystick = $a1   ; last joystick direction processed
 joystick_down = $a2     ; down = 1, up=$ff, no movement = 0
 joystick_right = $a3    ; right = 1, left=$ff, no movement = 0
+vscroll_x2 = $a4        ; twice vertical scrolling? no = 0, yes = $ff
 
 init
         jsr init_font
@@ -65,16 +66,17 @@ init
         sta delay_count
 
         jsr to_wide
+        jsr to_1x
 
 forever jmp forever
 
 
-vbi     jsr toggle_wide ; handle OPTION key for screen width changes
+vbi     jsr toggle_wide ; handle OPTION & SELECT keys for control changes
         jsr record_joystick ; check joystick for scrolling direction
         dec delay_count ; wait for number of VBLANKs before updating
         bne ?exit       ;   fine/coarse scrolling
 
-        jsr process_joystick ; update scrolling params based on current joystick direction
+        jsr process_joystick ; update scrolling position based on current joystick direction
 
         lda #delay      ; reset counter
         sta delay_count
@@ -83,17 +85,27 @@ vbi     jsr toggle_wide ; handle OPTION key for screen width changes
 
 toggle_wide
         lda CONSOL
+        cmp #7          ; nothing pressed
+        beq ?not_anything
+        bit pressed     ; something already pressed? Wait until released
+        bmi ?exit       ;   before allowing anything new
         cmp #3          ; option by itself
-        bne ?not_pressed
-        lda pressed
-        bne ?exit
-        lda #1
+        bne ?not_option
+        lda #$ff
         sta pressed
         lda SDMCTL
         cmp #$22
         beq to_wide
-        jmp to_narrow
-?not_pressed
+        bne to_narrow
+?not_option
+        cmp #5          ; select by itself
+        bne ?not_anything
+        lda #$ff
+        sta pressed
+        lda vscroll_x2
+        beq to_2x
+        bne to_1x
+?not_anything
         lda #0
         sta pressed
 ?exit   rts
@@ -112,6 +124,22 @@ to_narrow lda #$22      ; enable narrow playfield
         sta dlist_2d_mode4_status_line2+1
         lda #>normal_text
         sta dlist_2d_mode4_status_line2+2
+        rts
+
+to_2x   lda #$ff        ; enable 2x vertical scrolling
+        sta vscroll_x2
+        lda #<x2_text ; change status text
+        sta dlist_2d_mode4_status_line3+1
+        lda #>x2_text
+        sta dlist_2d_mode4_status_line3+2
+        rts
+
+to_1x   lda #0          ; enable 1x vertical scrolling
+        sta vscroll_x2
+        lda #<x1_text   ; change status text
+        sta dlist_2d_mode4_status_line3+1
+        lda #>x1_text
+        sta dlist_2d_mode4_status_line3+2
         rts
 
 
@@ -226,7 +254,10 @@ coarse_scroll_left
 ; VSCROL value in A
 fine_scroll_up
         dec vert_scroll
-        lda vert_scroll
+        bit vscroll_x2
+        bpl ?not_2x
+        dec vert_scroll
+?not_2x lda vert_scroll
         bpl ?done       ; if non-negative, still in the middle of the character
         jsr coarse_scroll_up   ; wrapped to $ff, do a coarse scroll...
         lda #vert_scroll_max-1 ;  ...followed by reseting the vscroll register
@@ -250,7 +281,10 @@ coarse_scroll_up
 ; VSCROL value in A
 fine_scroll_down
         inc vert_scroll
-        lda vert_scroll
+        bit vscroll_x2
+        bpl ?not_2x
+        inc vert_scroll
+?not_2x lda vert_scroll
         cmp #vert_scroll_max ; check to see if we need to do a coarse scroll
         bcc ?done       ; nope, still in the middle of the character
         jsr coarse_scroll_down ; yep, do a coarse scroll...
