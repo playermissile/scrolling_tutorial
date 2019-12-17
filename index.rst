@@ -1393,26 +1393,34 @@ change the ``DMACTL`` register before ANTIC started drawing the first line of
 the status area.
 
 However, trying to use the same DLI on the same display list instruction (line
-**V**) creates a problem when adding vertical scrolling to the playfield: the
-``VSCROLL`` bit is cleared on the last line of the scrolling region, reducing
-it to a single scan line. However, almost no CPU cycles are available on the
-first scan line of ANTIC mode 4, as ANTIC steals so many to prepare the font
-glyphs:
+**V**) creates a problem when adding vertical scrolling to the playfield: that
+bit is cleared on the display list instruction for last line of the scrolling
+region, reducing it to a single scan line when the hardware register ``VSCROL =
+0``. However, almost no CPU cycles are available on the first scan line of
+ANTIC mode 4, as ANTIC steals so many to prepare the font glyphs:
 
 .. figure:: fine_scroll_2d_joystick_vscroll0.png
    :align: center
    :width: 90%
 
-Notice that it doesn't happen when the screen is scrolled a few scan lines:
+Notice that it doesn't happen when the screen is scrolled to any scan line
+other than the first scan line, so whenever ``VSCROL > 0`` it works fine.
+Recall as described in the :ref:`VSCROLL Hardware Register <vscroll>` section
+above, ``VSCROL`` controls the start & stop scan lines of the first display
+list instruction *after* the vertical scrolling bit is cleared. ``VSCROL = 0``
+produces one scan line, which in turn produces the DLI problem shown above.
+``VSCROL = 1`` produces *two* scan lines, giving the DLI time to complete while
+still processing the 2nd scan line, before reaching the status text area:
 
-.. figure:: fine_scroll_2d_joystick_vscroll3.png
+.. figure:: fine_scroll_2d_joystick_vscroll1.png
    :align: center
    :width: 90%
 
-or when the scrolled area is set to normal width, despite the DLI still
-happening on the first scan line of a mode 4 line, because as it turns out
-there are *just enough* cycles available on the first line of a normal
-playfield (ANTIC steals 8 fewer cycles, and it happens that that's enough):
+The problem is not present when the scrolled area is set to normal width
+regardless of the value of ``VSCROL``, despite the DLI still happening on the
+first scan line of a mode 4 line. It turns out there are enough cycles
+available on the first line of a normal playfield (ANTIC steals 8 fewer cycles,
+and as it happens that that's *just* enough for the code in this simple DLI):
 
 .. figure:: fine_scroll_2d_joystick_normal.png
    :align: center
