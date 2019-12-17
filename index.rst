@@ -1438,4 +1438,8 @@ and as it happens that that's *just* enough for the code in this simple DLI):
 
 
 A Fine Scrolling Engine
-------------------------------
+-------------------------------
+
+.. note::
+
+   When written, the fine scrolling engine will be large, so I'm moving it to a separate tutorial: :ref:`Atari 8-bit Fine Scrolling Game Engine <scrolling_engine>`
