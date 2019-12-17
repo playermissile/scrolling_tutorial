@@ -10,6 +10,9 @@ horz_scroll = $91       ; variable used to store HSCROL value
 horz_scroll_max = 4     ; ANTIC mode 4 has 4 color clocks
 
 pressed = $a0           ; user still pressing button?
+latest_joystick = $a1   ; last joystick direction processed
+joystick_down = $a2     ; down = 1, up=$ff, no movement = 0
+joystick_right = $a3    ; right = 1, left=$ff, no movement = 0
 
 init
         jsr init_font
@@ -55,12 +58,13 @@ init
 loop    ldx #delay      ; number of VBLANKs to wait
         ldy RTCLOK+2    ; check fastest moving RTCLOCK byte
 ?start  jsr toggle_wide
+        jsr record_joystick
 ?wait   cpy RTCLOK+2    ; VBLANK will update this
         beq ?start       ; delay until VBLANK changes it
         dex             ; delay for a number of VBLANKs
         bpl ?start
 
-        jsr check_joystick ; check joystick for scrolling direction
+        jsr process_joystick ; check joystick for scrolling direction
 
         jmp loop
 
@@ -100,8 +104,45 @@ to_narrow lda #$22      ; enable narrow playfield
 
 ; JOYSTICK DIRECTION
 
-check_joystick
+record_joystick
+        lda STICK0
+        sta latest_joystick
         rts
+
+process_joystick
+        lda #0
+        sta joystick_down
+        sta joystick_right
+        lda latest_joystick     ; bits 3 - 0 = right, left, down, up
+        ror a                   ; put bit 0 in carry
+        bcs ?down               ; carry clear = up, set = not pressed
+        dec joystick_down
+?down   ror a
+        bcs ?left
+        inc joystick_down
+?left   ror a
+        bcs ?right
+        inc joystick_right
+?right  ror a
+        bcs ?next
+        dec joystick_right
+?next   lda #0
+        sta latest_joystick      ; reset joystick
+
+        lda joystick_right
+        beq ?updown
+        bmi ?left1
+        jsr fine_scroll_right
+        jmp ?updown
+?left1  jsr fine_scroll_left
+
+?updown lda joystick_down
+        beq ?done
+        bmi ?up1
+        jsr fine_scroll_down
+        jmp ?done
+?up1    jsr fine_scroll_up
+?done   rts
 
 
 ; HORIZONTAL SCROLLING
