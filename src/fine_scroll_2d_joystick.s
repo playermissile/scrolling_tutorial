@@ -4,6 +4,8 @@
 
 delay = 5
 
+delay_count = $80       ; counter between scrolls
+
 vert_scroll = $90       ; variable used to store VSCROL value
 vert_scroll_max = 8     ; ANTIC mode 4 has 8 scan lines
 horz_scroll = $91       ; variable used to store HSCROL value
@@ -33,13 +35,19 @@ init
         lda #>dli
         sta VDSLST+1
 
+        ; load deferred vertical blank address
+        ldx #>vbi
+        ldy #<vbi
+        lda #7
+        jsr SETVBV
+
         ; activate display list interrupt
         lda #NMIEN_VBI | NMIEN_DLI
         sta NMIEN
 
         jsr fillscreen_test_pattern
         lda #$80
-        ldx #$20        ; 32 pages; bytes $8000 - $9fff
+        ldx #$38        ; 56 pages; bytes $8000 - $b7ff
         jsr label_pages
 
         lda #0          ; initialize horizontal scrolling value
@@ -53,20 +61,25 @@ init
         lda #0
         sta pressed
 
+        lda #delay      ; number of VBLANKs to wait
+        sta delay_count
+
         jsr to_wide
 
-loop    ldx #delay      ; number of VBLANKs to wait
-        ldy RTCLOK+2    ; check fastest moving RTCLOCK byte
-?start  jsr toggle_wide
-        jsr record_joystick
-?wait   cpy RTCLOK+2    ; VBLANK will update this
-        beq ?start       ; delay until VBLANK changes it
-        dex             ; delay for a number of VBLANKs
-        bpl ?start
+forever jmp forever
 
-        jsr process_joystick ; check joystick for scrolling direction
 
-        jmp loop
+vbi     jsr toggle_wide ; handle OPTION key for screen width changes
+        jsr record_joystick ; check joystick for scrolling direction
+        dec delay_count ; wait for number of VBLANKs before updating
+        bne ?exit       ;   fine/coarse scrolling
+
+        jsr process_joystick ; update scrolling params based on current joystick direction
+
+        lda #delay      ; reset counter
+        sta delay_count
+?exit   jmp XITVBV      ; exit VBI through operating system routine
+
 
 toggle_wide
         lda CONSOL
@@ -106,48 +119,59 @@ to_narrow lda #$22      ; enable narrow playfield
 
 record_joystick
         lda STICK0
+        cmp #$0f
+        bcs ?done       ; only store if a direction is pressed
         sta latest_joystick
-        rts
+?done   rts
 
 process_joystick
         lda #0
         sta joystick_down
         sta joystick_right
         lda latest_joystick     ; bits 3 - 0 = right, left, down, up
-        ror a                   ; put bit 0 in carry
+        ror a                   ; put bit 0 (UP) in carry
         bcs ?down               ; carry clear = up, set = not pressed
         dec joystick_down
-?down   ror a
+?down   ror a                   ; put bit 1 (DOWN) in carry
         bcs ?left
         inc joystick_down
-?left   ror a
+?left   ror a                   ; put bit 2 (LEFT) in carry
         bcs ?right
-        inc joystick_right
-?right  ror a
-        bcs ?next
         dec joystick_right
+?right  ror a                   ; put bit 3 (RIGHT) in carry
+        bcs ?next
+        inc joystick_right
 ?next   lda #0
-        sta latest_joystick      ; reset joystick
+        sta latest_joystick     ; reset joystick
 
         lda joystick_right
         beq ?updown
         bmi ?left1
         jsr fine_scroll_right
-        jmp ?updown
+        jmp ?storeh
 ?left1  jsr fine_scroll_left
+?storeh sta HSCROL      ; store vertical scroll value in hardware register
+        clc
+        adc #$90
+        sta joystick_text+29
 
 ?updown lda joystick_down
         beq ?done
         bmi ?up1
         jsr fine_scroll_down
-        jmp ?done
+        jmp ?storev
 ?up1    jsr fine_scroll_up
+?storev sta VSCROL      ; store vertical scroll value in hardware register
+        clc
+        adc #$90
+        sta joystick_text+38
 ?done   rts
 
 
 ; HORIZONTAL SCROLLING
 
-; scroll one color clock right and check if at HSCROL limit
+; scroll one color clock right and check if at HSCROL limit, returns
+; HSCROL value in A
 fine_scroll_right
         dec horz_scroll
         lda horz_scroll
@@ -155,8 +179,7 @@ fine_scroll_right
         jsr coarse_scroll_right ; wrapped to $ff, do a coarse scroll...
         lda #horz_scroll_max-1  ;  ...followed by reseting the HSCROL register
         sta horz_scroll
-?done   sta HSCROL      ; store vertical scroll value in hardware register
-        rts
+?done   rts
 
 ; move viewport one byte to the right by pointing each display list start
 ; address to one byte higher in memory
@@ -171,7 +194,8 @@ coarse_scroll_right
         bne ?loop
         rts
 
-; scroll one color clock left and check if at HSCROL limit
+; scroll one color clock left and check if at HSCROL limit, returns
+; HSCROL value in A
 fine_scroll_left
         inc horz_scroll
         lda horz_scroll
@@ -180,8 +204,7 @@ fine_scroll_left
         jsr coarse_scroll_left ; yep, do a coarse scroll...
         lda #0          ;  ...followed by reseting the HSCROL register
         sta horz_scroll
-?done   sta HSCROL      ; store vertical scroll value in hardware register
-        rts
+?done   rts
 
 ; move viewport one byte to the left by pointing each display list start
 ; address to one byte lower in memory
@@ -199,7 +222,8 @@ coarse_scroll_left
 
 ; VERTICAL SCROLLING
 
-; scroll one scan line up and check if at VSCROL limit
+; scroll one scan line up and check if at VSCROL limit, returns
+; VSCROL value in A
 fine_scroll_up
         dec vert_scroll
         lda vert_scroll
@@ -207,8 +231,7 @@ fine_scroll_up
         jsr coarse_scroll_up   ; wrapped to $ff, do a coarse scroll...
         lda #vert_scroll_max-1 ;  ...followed by reseting the vscroll register
         sta vert_scroll
-?done   sta VSCROL      ; store vertical scroll value in hardware register
-        rts
+?done   rts
 
 ; move viewport one line up by pointing display list start address
 ; to the address one page earlier in memory
@@ -223,7 +246,8 @@ coarse_scroll_up
         bne ?loop
         rts
 
-; scroll one scan line down and check if at VSCROL limit
+; scroll one scan line down and check if at VSCROL limit, returns
+; VSCROL value in A
 fine_scroll_down
         inc vert_scroll
         lda vert_scroll
@@ -232,8 +256,7 @@ fine_scroll_down
         jsr coarse_scroll_down ; yep, do a coarse scroll...
         lda #0          ;  ...followed by reseting the vscroll register
         sta vert_scroll
-?done   sta VSCROL      ; store vertical scroll value in hardware register
-        rts
+?done   rts
 
 ; move viewport one line down by pointing display list start address
 ; to the address one page later in memory
