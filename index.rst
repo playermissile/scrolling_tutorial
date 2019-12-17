@@ -3,10 +3,10 @@
 .. highlight:: ca65
 
 
-Atari 8-bit Fine Scrolling: An (In)Complete(ish) Tutorial
+Atari 8-bit Fine Scrolling: A Complete(ish) Tutorial
 ======================================================================
 
-**Revision 3, updated 13 Dec 2019**
+**Revision 4, updated 17 Dec 2019**
 
 This is a tutorial on fine scrolling for the Atari 8-bit series of computers.
 In a nutshell, the ANTIC coprocessor provides 2D hardware scrolling at very
