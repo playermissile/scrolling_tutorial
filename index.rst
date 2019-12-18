@@ -1437,9 +1437,18 @@ and as it happens that that's *just* enough for the code in this simple DLI):
 
 
 
-A Fine Scrolling Engine
+Further Ideas
 -------------------------------
 
-.. note::
+I'm planning on writing a fine scrolling game engine that will take the ideas
+presented here and apply it to real world problem, or a real world problem
+circa 1984.
 
-   When written, the fine scrolling engine will be large, so I'm moving it to a separate tutorial: :ref:`Atari 8-bit Fine Scrolling Game Engine <scrolling_engine>`
+My goals are omni-directional 2D scrolling, so not just 8-way scrolling but at
+any angle with a fixed-point integer math that will keep track of fractional
+parts of ``HSCROL`` and ``VSCROL``. At this point, I'm not sure about making
+the wraparound world like Mountain King or a world with limits like Nautilus.
+
+But, when written, the fine scrolling engine will be large, so I'm moving it to
+a separate tutorial: :ref:`Atari 8-bit Fine Scrolling Game Engine
+<scrolling_engine>`
