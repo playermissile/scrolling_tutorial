@@ -1434,6 +1434,42 @@ and as it happens that that's *just* enough for the code in this simple DLI):
    <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_scroll_2d_joystick.xex">fine_scroll_2d_joystick.xex</a></li>
    </ul>
 
+This is the most complete example in this tutorial, so it will be dissected
+thoroughly.
+
+The top of the code:
+
+        *= $3000
+
+.include "hardware.s"
+
+sets the origin, includes the file
+`hardware.s<https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/hardware.s>`_
+which defines all of the shadow and hardware registers defined in Mapping the
+Atari.
+
+There are a few local constants:
+
+delay = 5               ; number of VBLANKs between scrolling updates
+vert_scroll_max = 8     ; ANTIC mode 4 has 8 scan lines
+horz_scroll_max = 4     ; ANTIC mode 4 has 4 color clocks
+
+where the ``delay`` value essentially controls how fast the screen scrolls.
+Here, it takes 5 VBLANK intervals before it will be moved. The
+
+delay_count = $80       ; counter for scrolling updates
+
+vert_scroll = $90       ; variable used to store VSCROL value
+horz_scroll = $91       ; variable used to store HSCROL value
+
+pressed = $a0           ; user still pressing button?
+latest_joystick = $a1   ; last joystick direction processed
+joystick_down = $a2     ; down = 1, up=$ff, no movement = 0
+joystick_right = $a3    ; right = 1, left=$ff, no movement = 0
+vscroll_x2 = $a4        ; twice vertical scrolling? no = 0, yes = $ff
+
+sets the origin, includes the file ``hardware.s`` which defines all of the
+shadow and hardware registers defined in Mapping the Atari.
 
 
 

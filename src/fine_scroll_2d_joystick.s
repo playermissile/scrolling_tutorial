@@ -2,14 +2,14 @@
 
 .include "hardware.s"
 
-delay = 5
+delay = 5               ; number of VBLANKs between scrolling updates
+vert_scroll_max = 8     ; ANTIC mode 4 has 8 scan lines
+horz_scroll_max = 4     ; ANTIC mode 4 has 4 color clocks
 
-delay_count = $80       ; counter between scrolls
+delay_count = $80       ; counter for scrolling updates
 
 vert_scroll = $90       ; variable used to store VSCROL value
-vert_scroll_max = 8     ; ANTIC mode 4 has 8 scan lines
 horz_scroll = $91       ; variable used to store HSCROL value
-horz_scroll_max = 4     ; ANTIC mode 4 has 4 color clocks
 
 pressed = $a0           ; user still pressing button?
 latest_joystick = $a1   ; last joystick direction processed
