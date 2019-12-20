@@ -1312,7 +1312,7 @@ applicable to real applications, the code to update the scrolling registers and
 mid-screen changes.
 
 
-
+.. _combined_fine_scrolling:
 
 Combined Fine Scrolling
 --------------------------------------------------
@@ -1438,7 +1438,15 @@ This is the most complete example in this tutorial, so it will be dissected
 thoroughly in the next section.
 
 The program is controlled using the joystick to scroll the playfield in any of
-the 8 directions.
+the 8 directions. The wide/normal playfield effect can be experimented with by
+pressing the ``OPTION`` key to change back and forth between them. Only when in
+wide playfield mode *and* ``VSCROL = 0`` will the DLI problem appear.
+
+Initially, diagonal scrolling modifies the ``HSCROL`` and ``VSCROL`` registers
+at the same rate, which (as described :ref:`above <combined_fine_scrolling>`)
+means tat it appears to scroll faster horizontally than vertically. Pressing
+the ``SELECT`` key will change that to double the vertical scrolling rate,
+making it appear much closer to a 45 degree angle when scrolling diagonally.
 
 
 A Complete Code Breakdown of the 2D Scrolling with DLI Example
@@ -1659,176 +1667,185 @@ scrolling step size) that handle the switching of each category:
            rts
 
 
-; JOYSTICK DIRECTION
+.. code-block::
+   ; JOYSTICK DIRECTION
 
-record_joystick
-        lda STICK0
-        cmp #$0f
-        bcs ?done       ; only store if a direction is pressed
-        sta latest_joystick
-?done   rts
+   record_joystick
+           lda STICK0
+           cmp #$0f
+           bcs ?done       ; only store if a direction is pressed
+           sta latest_joystick
+   ?done   rts
 
-process_joystick
-        lda #0
-        sta joystick_down
-        sta joystick_right
-        lda latest_joystick     ; bits 3 - 0 = right, left, down, up
-        ror a                   ; put bit 0 (UP) in carry
-        bcs ?down               ; carry clear = up, set = not pressed
-        dec joystick_down
-?down   ror a                   ; put bit 1 (DOWN) in carry
-        bcs ?left
-        inc joystick_down
-?left   ror a                   ; put bit 2 (LEFT) in carry
-        bcs ?right
-        dec joystick_right
-?right  ror a                   ; put bit 3 (RIGHT) in carry
-        bcs ?next
-        inc joystick_right
-?next   lda #0
-        sta latest_joystick     ; reset joystick
+   process_joystick
+           lda #0
+           sta joystick_down
+           sta joystick_right
+           lda latest_joystick     ; bits 3 - 0 = right, left, down, up
+           ror a                   ; put bit 0 (UP) in carry
+           bcs ?down               ; carry clear = up, set = not pressed
+           dec joystick_down
+   ?down   ror a                   ; put bit 1 (DOWN) in carry
+           bcs ?left
+           inc joystick_down
+   ?left   ror a                   ; put bit 2 (LEFT) in carry
+           bcs ?right
+           dec joystick_right
+   ?right  ror a                   ; put bit 3 (RIGHT) in carry
+           bcs ?next
+           inc joystick_right
+   ?next   lda #0
+           sta latest_joystick     ; reset joystick
 
-        lda joystick_right
-        beq ?updown
-        bmi ?left1
-        jsr fine_scroll_right
-        jmp ?storeh
-?left1  jsr fine_scroll_left
-?storeh sta HSCROL      ; store vertical scroll value in hardware register
-        clc
-        adc #$90
-        sta joystick_text+29
+           lda joystick_right
+           beq ?updown
+           bmi ?left1
+           jsr fine_scroll_right
+           jmp ?storeh
+   ?left1  jsr fine_scroll_left
+   ?storeh sta HSCROL      ; store vertical scroll value in hardware register
+           clc
+           adc #$90
+           sta joystick_text+29
 
-?updown lda joystick_down
-        beq ?done
-        bmi ?up1
-        jsr fine_scroll_down
-        jmp ?storev
-?up1    jsr fine_scroll_up
-?storev sta VSCROL      ; store vertical scroll value in hardware register
-        clc
-        adc #$90
-        sta joystick_text+38
-?done   rts
-
-
-; HORIZONTAL SCROLLING
-
-; scroll one color clock right and check if at HSCROL limit, returns
-; HSCROL value in A
-fine_scroll_right
-        dec horz_scroll
-        lda horz_scroll
-        bpl ?done       ; if non-negative, still in the middle of the character
-        jsr coarse_scroll_right ; wrapped to $ff, do a coarse scroll...
-        lda #horz_scroll_max-1  ;  ...followed by reseting the HSCROL register
-        sta horz_scroll
-?done   rts
-
-; move viewport one byte to the right by pointing each display list start
-; address to one byte higher in memory
-coarse_scroll_right
-        ldy #22         ; 22 lines to modify
-        ldx #4          ; 4th byte after start of display list is low byte of address
-?loop   inc dlist_2d_mode4,x
-        inx             ; skip to next low byte which is 3 bytes away
-        inx
-        inx
-        dey
-        bne ?loop
-        rts
-
-; scroll one color clock left and check if at HSCROL limit, returns
-; HSCROL value in A
-fine_scroll_left
-        inc horz_scroll
-        lda horz_scroll
-        cmp #horz_scroll_max ; check to see if we need to do a coarse scroll
-        bcc ?done       ; nope, still in the middle of the character
-        jsr coarse_scroll_left ; yep, do a coarse scroll...
-        lda #0          ;  ...followed by reseting the HSCROL register
-        sta horz_scroll
-?done   rts
-
-; move viewport one byte to the left by pointing each display list start
-; address to one byte lower in memory
-coarse_scroll_left
-        ldy #22         ; 22 lines to modify
-        ldx #4          ; 4th byte after start of display list is low byte of address
-?loop   dec dlist_2d_mode4,x
-        inx             ; skip to next low byte which is 3 bytes away
-        inx
-        inx
-        dey
-        bne ?loop
-        rts
+   ?updown lda joystick_down
+           beq ?done
+           bmi ?up1
+           jsr fine_scroll_down
+           jmp ?storev
+   ?up1    jsr fine_scroll_up
+   ?storev sta VSCROL      ; store vertical scroll value in hardware register
+           clc
+           adc #$90
+           sta joystick_text+38
+   ?done   rts
 
 
-; VERTICAL SCROLLING
+   ; HORIZONTAL SCROLLING
 
-; scroll one scan line up and check if at VSCROL limit, returns
-; VSCROL value in A
-fine_scroll_up
-        dec vert_scroll
-        bit vscroll_x2
-        bpl ?not_2x
-        dec vert_scroll
-?not_2x lda vert_scroll
-        bpl ?done       ; if non-negative, still in the middle of the character
-        jsr coarse_scroll_up   ; wrapped to $ff, do a coarse scroll...
-        lda #vert_scroll_max-1 ;  ...followed by reseting the vscroll register
-        sta vert_scroll
-?done   rts
+   ; scroll one color clock right and check if at HSCROL limit, returns
+   ; HSCROL value in A
+   fine_scroll_right
+           dec horz_scroll
+           lda horz_scroll
+           bpl ?done       ; if non-negative, still in the middle of the character
+           jsr coarse_scroll_right ; wrapped to $ff, do a coarse scroll...
+           lda #horz_scroll_max-1  ;  ...followed by reseting the HSCROL register
+           sta horz_scroll
+   ?done   rts
 
-; move viewport one line up by pointing display list start address
-; to the address one page earlier in memory
-coarse_scroll_up
-        ldy #22         ; 22 lines to modify
-        ldx #5          ; 5th byte after start of display list is high byte of address
-?loop   dec dlist_2d_mode4,x
-        inx             ; skip to next low byte which is 3 bytes away
-        inx
-        inx
-        dey
-        bne ?loop
-        rts
+   ; move viewport one byte to the right by pointing each display list start
+   ; address to one byte higher in memory
+   coarse_scroll_right
+           ldy #22         ; 22 lines to modify
+           ldx #4          ; 4th byte after start of display list is low byte of address
+   ?loop   inc dlist_2d_mode4,x
+           inx             ; skip to next low byte which is 3 bytes away
+           inx
+           inx
+           dey
+           bne ?loop
+           rts
 
-; scroll one scan line down and check if at VSCROL limit, returns
-; VSCROL value in A
-fine_scroll_down
-        inc vert_scroll
-        bit vscroll_x2
-        bpl ?not_2x
-        inc vert_scroll
-?not_2x lda vert_scroll
-        cmp #vert_scroll_max ; check to see if we need to do a coarse scroll
-        bcc ?done       ; nope, still in the middle of the character
-        jsr coarse_scroll_down ; yep, do a coarse scroll...
-        lda #0          ;  ...followed by reseting the vscroll register
-        sta vert_scroll
-?done   rts
+   ; scroll one color clock left and check if at HSCROL limit, returns
+   ; HSCROL value in A
+   fine_scroll_left
+           inc horz_scroll
+           lda horz_scroll
+           cmp #horz_scroll_max ; check to see if we need to do a coarse scroll
+           bcc ?done       ; nope, still in the middle of the character
+           jsr coarse_scroll_left ; yep, do a coarse scroll...
+           lda #0          ;  ...followed by reseting the HSCROL register
+           sta horz_scroll
+   ?done   rts
 
-; move viewport one line down by pointing display list start address
-; to the address one page later in memory
-coarse_scroll_down
-        ldy #22         ; 22 lines to modify
-        ldx #5          ; 5th byte after start of display list is high byte of address
-?loop   inc dlist_2d_mode4,x
-        inx             ; skip to next low byte which is 3 bytes away
-        inx
-        inx
-        dey
-        bne ?loop
-        rts
+   ; move viewport one byte to the left by pointing each display list start
+   ; address to one byte lower in memory
+   coarse_scroll_left
+           ldy #22         ; 22 lines to modify
+           ldx #4          ; 4th byte after start of display list is low byte of address
+   ?loop   dec dlist_2d_mode4,x
+           inx             ; skip to next low byte which is 3 bytes away
+           inx
+           inx
+           dey
+           bne ?loop
+           rts
 
 
+   ; VERTICAL SCROLLING
 
-dli     pha             ; only using A register, so save old value to the stack
-        lda #$22        ; normal playfield width
-        sta WSYNC       ; any value saved to WSYNC will trigger the pause
-        sta DMACTL      ; store it in the hardware register
-        pla             ; restore the A register
-        rti             ; always end DLI with RTI!
+   ; scroll one scan line up and check if at VSCROL limit, returns
+   ; VSCROL value in A
+   fine_scroll_up
+           dec vert_scroll
+           bit vscroll_x2
+           bpl ?not_2x
+           dec vert_scroll
+   ?not_2x lda vert_scroll
+           bpl ?done       ; if non-negative, still in the middle of the character
+           jsr coarse_scroll_up   ; wrapped to $ff, do a coarse scroll...
+           lda #vert_scroll_max-1 ;  ...followed by reseting the vscroll register
+           sta vert_scroll
+   ?done   rts
+
+   ; move viewport one line up by pointing display list start address
+   ; to the address one page earlier in memory
+   coarse_scroll_up
+           ldy #22         ; 22 lines to modify
+           ldx #5          ; 5th byte after start of display list is high byte of address
+   ?loop   dec dlist_2d_mode4,x
+           inx             ; skip to next low byte which is 3 bytes away
+           inx
+           inx
+           dey
+           bne ?loop
+           rts
+
+   ; scroll one scan line down and check if at VSCROL limit, returns
+   ; VSCROL value in A
+   fine_scroll_down
+           inc vert_scroll
+           bit vscroll_x2
+           bpl ?not_2x
+           inc vert_scroll
+   ?not_2x lda vert_scroll
+           cmp #vert_scroll_max ; check to see if we need to do a coarse scroll
+           bcc ?done       ; nope, still in the middle of the character
+           jsr coarse_scroll_down ; yep, do a coarse scroll...
+           lda #0          ;  ...followed by reseting the vscroll register
+           sta vert_scroll
+   ?done   rts
+
+   ; move viewport one line down by pointing display list start address
+   ; to the address one page later in memory
+   coarse_scroll_down
+           ldy #22         ; 22 lines to modify
+           ldx #5          ; 5th byte after start of display list is high byte of address
+   ?loop   inc dlist_2d_mode4,x
+           inx             ; skip to next low byte which is 3 bytes away
+           inx
+           inx
+           dey
+           bne ?loop
+           rts
+
+
+The simple display list interrupt:
+
+.. code-block::
+
+   dli     pha             ; only using A register, so save old value to the stack
+           lda #$22        ; normal playfield width
+           sta WSYNC       ; any value saved to WSYNC will trigger the pause
+           sta DMACTL      ; store it in the hardware register
+           pla             ; restore the A register
+           rti             ; always end DLI with RTI!
+
+exists only to change the playfield width back to normal (40 bytes wide) for
+the status area. The playfield width of the scrolling portion of the display is
+set every vertical blank from the shadow value stored in ``SDMCTL`` when it is
+changed by the ``OPTION`` key.
 
 
 The common subroutines used by this program are defined here, and they are
