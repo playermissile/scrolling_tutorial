@@ -17,7 +17,26 @@ joystick_down = $a2     ; down = 1, up=$ff, no movement = 0
 joystick_right = $a3    ; right = 1, left=$ff, no movement = 0
 vscroll_x2 = $a4        ; twice vertical scrolling? no = 0, yes = $ff
 
-init
+init    lda #0          ; initialize horizontal scrolling value
+        sta horz_scroll
+        sta HSCROL      ; initialize hardware register
+
+        lda #0          ; initialize vertical scrolling value
+        sta vert_scroll
+        sta VSCROL      ; initialize hardware register
+
+        lda #0
+        sta pressed
+        sta latest_joystick
+        sta joystick_down
+        sta joystick_right
+
+        lda #delay      ; number of VBLANKs to wait
+        sta delay_count
+
+        jsr to_wide
+        jsr to_1x
+
         jsr init_font
 
         lda #<dlist_2d_mode4
@@ -51,27 +70,10 @@ init
         ldx #$38        ; 56 pages; bytes $8000 - $b7ff
         jsr label_pages
 
-        lda #0          ; initialize horizontal scrolling value
-        sta horz_scroll
-        sta HSCROL      ; initialize hardware register
-
-        lda #0          ; initialize vertical scrolling value
-        sta vert_scroll
-        sta VSCROL      ; initialize hardware register
-
-        lda #0
-        sta pressed
-
-        lda #delay      ; number of VBLANKs to wait
-        sta delay_count
-
-        jsr to_wide
-        jsr to_1x
-
 forever jmp forever
 
 
-vbi     jsr toggle_wide ; handle OPTION & SELECT keys for control changes
+vbi     jsr check_console ; handle OPTION & SELECT keys for control changes
         jsr record_joystick ; check joystick for scrolling direction
         dec delay_count ; wait for number of VBLANKs before updating
         bne ?exit       ;   fine/coarse scrolling
@@ -83,7 +85,7 @@ vbi     jsr toggle_wide ; handle OPTION & SELECT keys for control changes
 ?exit   jmp XITVBV      ; exit VBI through operating system routine
 
 
-toggle_wide
+check_console
         lda CONSOL
         cmp #7          ; nothing pressed
         beq ?not_anything
