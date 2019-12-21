@@ -124,12 +124,14 @@ layout, but what that means in terms of what's displayed is that new data is
 appearing at the top of the screen, pushing everything else down the screen and
 old data is vanishing off the bottom of the screen.
 
-Because there are so many types of lines, the word line becomes ambiguous without clarification. There are:
+.. note::
 
- * scan lines on screen
- * number of scan lines in a character cell
- * lines of characters in the viewport
- * lines of characters in the screen memory layout
+   Because there are so many types of lines, the word by itself can be ambiguous. In places where I use the word, I will attempt to clarify which sense of "line" I mean:
+
+    * scan lines on screen
+    * number of scan lines in a character cell
+    * lines of characters in the viewport
+    * lines of characters in the screen memory layout
 
 
 
