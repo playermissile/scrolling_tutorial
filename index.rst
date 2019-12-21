@@ -38,7 +38,9 @@ this tutorial, the version built-in to `Omnivore
 
    Here are some resources for learning more about scrolling:
 
+   * `De Re Atari, Chapter 2 <https://www.atariarchives.org/dere/chapt02.php>`_
    * `Atari Graphics & Arcade Game Design, Chapter 7 <https://archive.org/details/ataribooks-atari-graphics-and-arcade-game-design/page/n221>`_
+   * ANALOG Computing tutorial series: `Part I <https://archive.org/details/analog-computing-magazine-13/page/n113>`_ - `Part II <https://archive.org/details/analog-computing-magazine-14/page/n25>`_ - `Part III <https://archive.org/details/analog-computing-magazine-15/page/n101>`_ - `Part IV <https://archive.org/details/analog-computing-magazine-16/page/n99>`_
 
 A Refresher on Display Lists
 --------------------------------------------
