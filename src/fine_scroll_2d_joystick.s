@@ -13,8 +13,8 @@ horz_scroll = $91       ; variable used to store HSCROL value
 
 pressed = $a0           ; user still pressing button?
 latest_joystick = $a1   ; last joystick direction processed
-joystick_down = $a2     ; down = 1, up=$ff, no movement = 0
-joystick_right = $a3    ; right = 1, left=$ff, no movement = 0
+joystick_y = $a2        ; down = 1, up=$ff, no movement = 0
+joystick_x = $a3        ; right = 1, left=$ff, no movement = 0
 vscroll_x2 = $a4        ; twice vertical scrolling? no = 0, yes = $ff
 
 init    lda #0          ; initialize horizontal scrolling value
@@ -28,8 +28,8 @@ init    lda #0          ; initialize horizontal scrolling value
         lda #0
         sta pressed
         sta latest_joystick
-        sta joystick_down
-        sta joystick_right
+        sta joystick_x
+        sta joystick_y
 
         lda #delay      ; number of VBLANKs to wait
         sta delay_count
@@ -87,29 +87,29 @@ vbi     jsr check_console ; handle OPTION & SELECT keys for control changes
 
 check_console
         lda CONSOL
-        cmp #7          ; nothing pressed
-        beq ?not_anything
+        cmp #7          ; are no console keys pressed?
+        beq ?not_anything ; yep, skip all checks
         bit pressed     ; something already pressed? Wait until released
         bmi ?exit       ;   before allowing anything new
-        cmp #3          ; option by itself
-        bne ?not_option
-        lda #$ff
+        cmp #3          ; is OPTION pressed by itself?
+        bne ?not_option ; nope, not that; check something else
+        lda #$ff        ; store value to indicate console key is pressed
         sta pressed
-        lda SDMCTL
-        cmp #$22
-        beq to_wide
-        bne to_narrow
+        lda SDMCTL      ; check current playfield width
+        cmp #$22        ; is it normal width?
+        beq to_wide     ; it's currently normal, switch to wide
+        bne to_narrow   ; otherwise it's wide, switch to normal
 ?not_option
-        cmp #5          ; select by itself
-        bne ?not_anything
-        lda #$ff
+        cmp #5          ; is SELECT pressed by itself?
+        bne ?not_anything ; nope, not that; check something else
+        lda #$ff        ; store value to indicate console key is pressed
         sta pressed
-        lda vscroll_x2
-        beq to_2x
-        bne to_1x
+        lda vscroll_x2  ; check current step size
+        beq to_2x       ; zero is 1x, switch to 2x
+        bne to_1x       ; non-zero is 2x, switch to 1x
 ?not_anything
-        lda #0
-        sta pressed
+        lda #0          ; no console key pressed, so clear the variable
+        sta pressed     ;   to allow a new press
 ?exit   rts
 
 to_wide lda #$23        ; enable wide playfield
@@ -148,53 +148,57 @@ to_1x   lda #0          ; enable 1x vertical scrolling
 ; JOYSTICK DIRECTION
 
 record_joystick
-        lda STICK0
+        lda STICK0      ; check joystick
         cmp #$0f
-        bcs ?done       ; only store if a direction is pressed
+        bcs ?fast       ; only store if a direction is pressed
         sta latest_joystick
+?fast   lda STRIG0      ; easter egg: check trigger
+        bne ?done       ; not pressed
+        lda #1          ; pressed = ludicrous speed!
+        sta delay_count
 ?done   rts
 
 process_joystick
-        lda #0
-        sta joystick_down
-        sta joystick_right
+        lda #0                  ; clear joystick movement vars
+        sta joystick_x
+        sta joystick_y
         lda latest_joystick     ; bits 3 - 0 = right, left, down, up
         ror a                   ; put bit 0 (UP) in carry
         bcs ?down               ; carry clear = up, set = not pressed
-        dec joystick_down
+        dec joystick_y
 ?down   ror a                   ; put bit 1 (DOWN) in carry
         bcs ?left
-        inc joystick_down
+        inc joystick_y
 ?left   ror a                   ; put bit 2 (LEFT) in carry
         bcs ?right
-        dec joystick_right
+        dec joystick_x
 ?right  ror a                   ; put bit 3 (RIGHT) in carry
         bcs ?next
-        inc joystick_right
+        inc joystick_x
 ?next   lda #0
         sta latest_joystick     ; reset joystick
 
-        lda joystick_right
-        beq ?updown
-        bmi ?left1
-        jsr fine_scroll_right
+        lda joystick_x  ; check horizontal scrolling
+        beq ?updown     ; zero means no movement, move on to vert
+        bmi ?left1      ; bit 7 set ($ff) means left
+        jsr fine_scroll_right ; otherwise, it's right
         jmp ?storeh
 ?left1  jsr fine_scroll_left
 ?storeh sta HSCROL      ; store vertical scroll value in hardware register
-        clc
-        adc #$90
-        sta joystick_text+29
+        clc             ; convert scroll value...
+        adc #$90        ;   to ATASCII text and...
+        sta joystick_text+29 ;   store on screen
 
-?updown lda joystick_down
-        beq ?done
-        bmi ?up1
-        jsr fine_scroll_down
+?updown lda joystick_y  ; check vertical scrolling
+        beq ?done       ; zero means no movement, we're done
+        bmi ?up1        ; bit 7 set ($ff) means up
+        jsr fine_scroll_down ; otherwise, it's down
         jmp ?storev
 ?up1    jsr fine_scroll_up
 ?storev sta VSCROL      ; store vertical scroll value in hardware register
-        clc
-        adc #$90
-        sta joystick_text+38
+        clc             ; convert scroll value...
+        adc #$90        ;   to ATASCII text and...
+        sta joystick_text+38 ;   store on screen
 ?done   rts
 
 

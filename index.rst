@@ -6,7 +6,7 @@
 Atari 8-bit Fine Scrolling: A Complete(ish) Tutorial
 ======================================================================
 
-**Revision 4, updated 17 Dec 2019**
+**Revision 5, updated 21 Dec 2019**
 
 This is a tutorial on fine scrolling for the Atari 8-bit series of computers.
 In a nutshell, the ANTIC coprocessor provides 2D hardware scrolling at very
@@ -1427,6 +1427,13 @@ and as it happens that that's *just* enough for the code in this simple DLI):
    :width: 90%
 
 
+This is the most complete example in this tutorial, so it will be dissected
+thoroughly in the next section.
+
+.. figure:: fine_scroll_2d_joystick.png
+   :align: center
+   :width: 90%
+
 .. raw:: html
 
    <ul>
@@ -1434,25 +1441,23 @@ and as it happens that that's *just* enough for the code in this simple DLI):
    <li><b>Executable:</b> <a href="https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/xex/fine_scroll_2d_joystick.xex">fine_scroll_2d_joystick.xex</a></li>
    </ul>
 
-This is the most complete example in this tutorial, so it will be dissected
-thoroughly in the next section.
-
 The program is controlled using the joystick to scroll the playfield in any of
 the 8 directions. The wide/normal playfield effect can be experimented with by
-pressing the ``OPTION`` key to change back and forth between them. Only when in
+pressing the **Option** key to change back and forth between them. Only when in
 wide playfield mode *and* ``VSCROL = 0`` will the DLI problem appear.
 
 Initially, diagonal scrolling modifies the ``HSCROL`` and ``VSCROL`` registers
 at the same rate, which (as described :ref:`above <combined_fine_scrolling>`)
 means tat it appears to scroll faster horizontally than vertically. Pressing
-the ``SELECT`` key will change that to double the vertical scrolling rate,
+the **Select** key will change that to double the vertical scrolling rate,
 making it appear much closer to a 45 degree angle when scrolling diagonally.
 
 
-A Complete Code Breakdown of the 2D Scrolling with DLI Example
+Code Walkthrough: 2D Scrolling with DLI
 -----------------------------------------------------------------
 
-The main part of the code is assembled at ``$3000`` and imports the contents of the file
+The main part of the code is assembled at ``$3000`` and imports the contents
+of the file
 `hardware.s <https://raw.githubusercontent.com/playermissile/scrolling_tutorial/master/src/hardware.s>`_
 which defines all of the shadow and hardware registers an listed in Mapping the
 Atari.:
@@ -1484,8 +1489,8 @@ variables are then defined:
 
    pressed = $a0           ; user still pressing button?
    latest_joystick = $a1   ; last joystick direction processed
-   joystick_down = $a2     ; down = 1, up=$ff, no movement = 0
-   joystick_right = $a3    ; right = 1, left=$ff, no movement = 0
+   joystick_y = $a2        ; down = 1, up=$ff, no movement = 0
+   joystick_x = $a3        ; right = 1, left=$ff, no movement = 0
    vscroll_x2 = $a4        ; twice vertical scrolling? no = 0, yes = $ff
 
 and the initialization starts with the assignment of values to all the zero
@@ -1507,8 +1512,8 @@ page variables described above:
            lda #delay      ; number of VBLANKs to wait
            sta delay_count
            sta latest_joystick
-           sta joystick_down
-           sta joystick_right
+           sta joystick_y
+           sta joystick_x
 
 The special drawing features (the wide/narrow playfield option and the vertical scrolling step size) are initialized:
 
@@ -1592,45 +1597,49 @@ variable) and updates the scrolling screen position.
            sta delay_count
    ?exit   jmp XITVBV      ; exit VBI through operating system routine
 
-It uses the delay count so that the screen is not scrolled too quickly so that
-it is not controllable by the user with a joystick. Experimentation resulted in
-5 being the lowest number of vertical blanks between updates; fewer frames
-between updates (meaning the scrolling gets updated faster) made precise
-controlling of the movement very difficult.
+It uses the delay count so that the screen is scrolled slowly enough to allow
+reasonable control with a joystick. Experimentation resulted in 5 being the
+lowest number of vertical blanks between updates; fewer frames between updates
+(meaning the scrolling gets updated faster) made precise controlling of the
+movement very difficult.
 
-The console key handling subroutine:
+The console key handling subroutine checks for **Option** or **Select** being
+pressed:
 
 .. code-block::
 
    check_console
            lda CONSOL
-           cmp #7          ; nothing pressed
-           beq ?not_anything
+           cmp #7          ; are no console keys pressed?
+           beq ?not_anything ; yep, skip all checks
            bit pressed     ; something already pressed? Wait until released
            bmi ?exit       ;   before allowing anything new
-           cmp #3          ; option by itself
-           bne ?not_option
-           lda #$ff
+           cmp #3          ; is OPTION pressed by itself?
+           bne ?not_option ; nope, not that; check something else
+           lda #$ff        ; store value to indicate console key is pressed
            sta pressed
-           lda SDMCTL
-           cmp #$22
-           beq to_wide
-           bne to_narrow
+           lda SDMCTL      ; check current playfield width
+           cmp #$22        ; is it normal width?
+           beq to_wide     ; it's currently normal, switch to wide
+           bne to_narrow   ; otherwise it's wide, switch to normal
    ?not_option
-           cmp #5          ; select by itself
-           bne ?not_anything
-           lda #$ff
+           cmp #5          ; is SELECT pressed by itself?
+           bne ?not_anything ; nope, not that; check something else
+           lda #$ff        ; store value to indicate console key is pressed
            sta pressed
-           lda vscroll_x2
-           beq to_2x
-           bne to_1x
+           lda vscroll_x2  ; check current step size
+           beq to_2x       ; zero is 1x, switch to 2x
+           bne to_1x       ; non-zero is 2x, switch to 1x
    ?not_anything
-           lda #0
-           sta pressed
+           lda #0          ; no console key pressed, so clear the variable
+           sta pressed     ;   to allow a new press
    ?exit   rts
 
-Then, there are 4 subroutines, two of each category (playfield, vertical
-scrolling step size) that handle the switching of each category:
+which controls two variables: the playfield width of the scrolling area, and
+the vertical scrolling step size. For each of those variables there are two
+possible choices, so two subroutines are needed: one for each choice. For the
+playfield width, there is one to change to the wide playfield and one to the
+normal playfield:
 
 .. code-block::
 
@@ -1650,6 +1659,22 @@ scrolling step size) that handle the switching of each category:
            sta dlist_2d_mode4_status_line2+2
            rts
 
+Each subroutine stores the new value into the shadow register and changes the
+status text on screen by updating the ``LMS`` address of that line in the
+display list.
+
+Notice also that the ``RTS`` in that subroutine actually returns control, not
+to the ``check_console`` subroutine itself, but to the bit of code that
+*called* the ``check_console`` subroutine. This is a commonly used idea: jump
+to a subroutine and use that subroutine's ``RTS`` as the return, rather than
+``JSR`` to that subroutine and then include a ``RTS`` that returns after the
+subroutine returns. (In this case the jump is a branch instruction, but the
+idea is the same.)
+
+The subroutines for the vertical scrolling step size are similar:
+
+.. code-block::
+
    to_2x   lda #$ff        ; enable 2x vertical scrolling
            sta vscroll_x2
            lda #<x2_text ; change status text
@@ -1666,62 +1691,145 @@ scrolling step size) that handle the switching of each category:
            sta dlist_2d_mode4_status_line3+2
            rts
 
+where the new values are stored in the ``vscroll_x2`` variable and the status
+line is updated by changing the display list ``LMS`` address.
+
+The joystick control in the vertical blank is broken into two parts: the
+``record_joystick`` subroutine that checks the joystick direction during every
+vertical blank, and ``process_joystick`` subroutine that updates the scrolling
+screen that only happens once every ``delay_count`` vertical blanks.
+
+The ``record_joystick`` routine simply records the value it sees in the
+``STICK0`` shadow register, *if* the joystick is not centered; that is, if the
+user is pressing it in a direction.
 
 .. code-block::
-   ; JOYSTICK DIRECTION
 
    record_joystick
-           lda STICK0
+           lda STICK0      ; check joystick
            cmp #$0f
-           bcs ?done       ; only store if a direction is pressed
+           bcs ?fast       ; only store if a direction is pressed
            sta latest_joystick
+   ?fast   lda STRIG0      ; easter egg: check trigger
+           bne ?done       ; not pressed
+           lda #1          ; pressed = ludicrous speed!
+           sta delay_count
    ?done   rts
 
+It is possible that the user can press a direction and within the interval
+before ``delay_count`` decreases to zero and the display is scrolled, release
+the joystick. If the joystick direction were only checked at the end of the
+delay interval, the program would miss the user input entirely and the display
+would not scroll.
+
+Instead, it was coded this way to appear to react better to the user because it
+will at least record some event if the user presses any direction during the
+interval.
+
+.. note::
+
+   The :ref:`fine scrolling game engine <scrolling_engine>` handles this a different way: the joystick direction is read every vertical blank and the display has the potential to be scrolled every vertical blank, but the scrolling position is recorded in fractions of pixels (or scan lines) using fixed-point math. Not every change in scrolling position updates the screen, it is only scrolled if the cumulative change is at least a pixel (scan line).
+
+The ``process_joystick`` routine takes the ``latest_joystick`` value and
+determines which direction the display needs to be scrolled by examining the
+bits recorded in that variable:
+
+.. code-block::
+
    process_joystick
-           lda #0
-           sta joystick_down
-           sta joystick_right
+           lda #0                  ; clear joystick movement vars
+           sta joystick_x
+           sta joystick_y
            lda latest_joystick     ; bits 3 - 0 = right, left, down, up
            ror a                   ; put bit 0 (UP) in carry
            bcs ?down               ; carry clear = up, set = not pressed
-           dec joystick_down
+           dec joystick_y
    ?down   ror a                   ; put bit 1 (DOWN) in carry
            bcs ?left
-           inc joystick_down
+           inc joystick_y
    ?left   ror a                   ; put bit 2 (LEFT) in carry
            bcs ?right
-           dec joystick_right
+           dec joystick_x
    ?right  ror a                   ; put bit 3 (RIGHT) in carry
            bcs ?next
-           inc joystick_right
+           inc joystick_x
    ?next   lda #0
            sta latest_joystick     ; reset joystick
 
-           lda joystick_right
-           beq ?updown
-           bmi ?left1
-           jsr fine_scroll_right
+It does this by examining each bit using the ``ROR`` opcode to check each bit
+individually. Each bit of the joystick indicates whether or not one direction
+is being pressed:
+
+  +---+---+---+---+-------+-------+-------+-----+
+  | 7 | 6 | 5 | 4 |  3    |  2    |  1    |  0  |
+  +---+---+---+---+-------+-------+-------+-----+
+  |  unused       | Right | Left  | Down  | Up  |
+  +---+---+---+---+-------+-------+-------+-----+
+
+Obviously, some combinations are not allowed: like right and left
+simultaneously. But others like left and up simultaneously are how diagonal
+directions are indicated.
+
+The variable ``joystick_y`` is set to zero initially, indicating no vertical
+movement, then decreased to ``$ff`` if the joystick is up or increased to ``1``
+if down. Similarly,  ``joystick_x`` is set to zero initially, indicating no
+horizontal movement, then decreased to ``$ff`` if the joystick is left or
+increased to ``1`` if right.
+
+The code is written this way to decouple the horizontal and vertical
+directions, so the following code to actually perform the scrolling can be
+written with fewer checks:
+
+.. code-block::
+
+           lda joystick_x  ; check horizontal scrolling
+           beq ?updown     ; zero means no movement, move on to vert
+           bmi ?left1      ; bit 7 set ($ff) means left
+           jsr fine_scroll_right ; otherwise, it's right
            jmp ?storeh
    ?left1  jsr fine_scroll_left
    ?storeh sta HSCROL      ; store vertical scroll value in hardware register
-           clc
-           adc #$90
-           sta joystick_text+29
+           clc             ; convert scroll value...
+           adc #$90        ;   to ATASCII text and...
+           sta joystick_text+29 ;   store on screen
 
-   ?updown lda joystick_down
-           beq ?done
-           bmi ?up1
-           jsr fine_scroll_down
+   ?updown lda joystick_y  ; check vertical scrolling
+           beq ?done       ; zero means no movement, we're done
+           bmi ?up1        ; bit 7 set ($ff) means up
+           jsr fine_scroll_down ; otherwise, it's down
            jmp ?storev
    ?up1    jsr fine_scroll_up
    ?storev sta VSCROL      ; store vertical scroll value in hardware register
-           clc
-           adc #$90
-           sta joystick_text+38
+           clc             ; convert scroll value...
+           adc #$90        ;   to ATASCII text and...
+           sta joystick_text+38 ;   store on screen
    ?done   rts
 
+Each direction is checked, the corresponding fine scrolling subroutine is
+called, and the hardware scrolling register is updated on screen for feedback
+to the user. It then returns control through the ``RTS``, back to the vertical
+blank driver routine (which resets the delay count variable and exits the
+vertical blank by jumping through the ``XITVBV`` operating system routine).
 
-   ; HORIZONTAL SCROLLING
+As far as this joystick processing routine goes, it only knows to call the fine
+scrolling subroutines. It is only within the fine scrolling routines that it
+will perform coarse scrolling if necessary.
+
+This is the culmination of the tutorial: there are separate routines for
+scrolling in the four directions. The variable holding the fine scrolling value
+is updated, and if the limit in that direction is reached and coarse scroll is
+needed, the coarse scrolling is performed and the fine scrolling value is reset
+to show the coarse scroll has happened. In each case, the value of the hardware
+scrolling register is returned so the joystick processing routine above can
+store the scrolling value in the hardware register and update the status
+display to reflect the new value.
+
+Scrolling to the right means *decreasing* the ``HSCROL`` value, and if it
+becomes less than zero, resetting it to the max value followed by *increasing*
+the ``LMS`` low byte address of each display list command in the scrolling
+region:
+
+.. code-block::
 
    ; scroll one color clock right and check if at HSCROL limit, returns
    ; HSCROL value in A
@@ -1746,6 +1854,12 @@ scrolling step size) that handle the switching of each category:
            dey
            bne ?loop
            rts
+
+Scrolling left means *increasing* the ``HSCROL`` value, and if greater than the
+limit of 3, resetting it to zero and *decreasing* the ``LMS`` low byte address
+of each display list command in the scrolling region:
+
+.. code-block::
 
    ; scroll one color clock left and check if at HSCROL limit, returns
    ; HSCROL value in A
@@ -1772,8 +1886,11 @@ scrolling step size) that handle the switching of each category:
            bne ?loop
            rts
 
+Scrolling up means *decreasing* the ``HSCROL`` value, and if it becomes less
+than zero, resetting it to the max value followed by *decreasing* the ``LMS``
+high byte address of each display list command in the scrolling region:
 
-   ; VERTICAL SCROLLING
+.. code-block::
 
    ; scroll one scan line up and check if at VSCROL limit, returns
    ; VSCROL value in A
@@ -1801,6 +1918,13 @@ scrolling step size) that handle the switching of each category:
            dey
            bne ?loop
            rts
+
+And finally, scrolling down means *increasing* the ``HSCROL`` value, and if
+greater than the limit of 7, resetting it to zero value followed by
+*increasing* the ``LMS`` high byte address of each display list command in the
+scrolling region:
+
+.. code-block::
 
    ; scroll one scan line down and check if at VSCROL limit, returns
    ; VSCROL value in A
@@ -1830,8 +1954,7 @@ scrolling step size) that handle the switching of each category:
            bne ?loop
            rts
 
-
-The simple display list interrupt:
+The only remaining bit of code is the simple display list interrupt:
 
 .. code-block::
 
@@ -1842,11 +1965,10 @@ The simple display list interrupt:
            pla             ; restore the A register
            rti             ; always end DLI with RTI!
 
-exists only to change the playfield width back to normal (40 bytes wide) for
-the status area. The playfield width of the scrolling portion of the display is
-set every vertical blank from the shadow value stored in ``SDMCTL`` when it is
-changed by the ``OPTION`` key.
-
+which exists only to change the playfield width back to normal (40 bytes wide)
+for the status area. The playfield width of the scrolling portion of the
+display is set every vertical blank from the shadow value stored in ``SDMCTL``
+when it is changed by the **Option** key.
 
 The common subroutines used by this program are defined here, and they are
 included last because several of them set the origin higher in memory. If we
@@ -1859,7 +1981,7 @@ the most recent origin, which is probably not what we want.
    .include "util_scroll.s"
    .include "font_data_antic4.s"
 
-Finally, what the comment says:
+Finally, the last few lines of code:
 
 .. code-block::
 
@@ -1867,12 +1989,13 @@ Finally, what the comment says:
            * = $2e0
            .word init
 
-this puts the 2 byte address of the ``init`` subroutine into the DOS startup
-vector, so after the XEX is loaded, DOS will jump to the beginning of our
-program. In my first draft of all these examples, I had left this vector out
-because all emulators seem to default to start at the first loaded address in
-the file, which was at ``$3000`` and coincidently happened to be pointing to
-the ``init`` code.
+puts the 2 byte address of the ``init`` subroutine into the DOS startup vector,
+so after the XEX is loaded, DOS will jump to the correct address to start the
+program.
+
+.. note::
+
+   In my first draft of all these examples, I had left this vector out because all emulators seem to default to start at the first loaded address in the file, which was at ``$3000`` and coincidently happened to be pointing to the ``init`` code.
 
 
 Further Ideas
