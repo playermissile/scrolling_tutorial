@@ -32,6 +32,8 @@ this tutorial, the version built-in to `Omnivore
 
 .. note:: All source code and XEX files are available in the `scrolling_tutorial source code repository <https://github.com/playermissile/scrolling_tutorial>`_ on github.
 
+.. note:: This tutorial is Copyright |copy| 2019 and licensed under the `CC BY-SA 4.0 <https://creativecommons.org/licenses/by-sa/4.0/>`_, except for the *assembly language source code* (both in this tutorial and in the repository), which is placed in the public domain via `CC0 <https://creativecommons.org/publicdomain/zero/1.0/>`_.
+
 .. seealso::
 
    Here are some resources for learning more about scrolling:
@@ -2013,3 +2015,6 @@ the wraparound world like Mountain King or a world with limits like Nautilus.
 But, when written, the fine scrolling engine will be large, so I'm moving it to
 a separate tutorial: :ref:`Atari 8-bit Fine Scrolling Game Engine
 <scrolling_engine>`
+
+
+.. |copy|   unicode:: U+000A9 .. COPYRIGHT SIGN
