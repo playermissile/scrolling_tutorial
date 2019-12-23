@@ -93,20 +93,30 @@ text modes make them ideal candidates for scrolling games.
    * `De Re Atari, Chapter 2 <https://www.atariarchives.org/dere/chapt02.php>`_
 
 
-Coarse Scrolling
+Introduction to Scrolling
 ---------------------------------------
 
-Coarse scrolling, that is: scrolling at character or byte boundaries (in what
-appears on screen as blocky jumps), can be accomplished without any use of the
-hardware scrolling registers. In fact, coarse scrolling falls out as a side-
-effect of the ``LMS`` bit on display list commands. Being able to reposition
-the memory pointer for any display list instruction means that you can tell
-ANTIC where to look in memory when it draws a scan line. Simply by moving the
-address pointer to a different location, you can change the display.
+Scrolling on the Atari can be broken up into two categories: coarse scrolling
+and fine scrolling.
+
+Coarse scrolling is scrolling at character or byte boundaries and will appear
+on screen as large jumps in position. It can be accomplished without any use of
+the hardware scrolling registers. In fact, coarse scrolling falls out as a
+side- effect of the ``LMS`` bit on display list commands. Being able to
+reposition the memory pointer for any display list instruction means that you
+can tell ANTIC where to look in memory when it draws a scan line. Simply by
+moving the address pointer to a different location, you can change the display.
+
+Fine scrolling is moving the viewport in steps that are smaller than a byte,
+giving the appearance of a smoothly sliding playfield, rather than one that
+jumps from position to position.
 
 First we will look at vertical coarse scrolling which is the simpler case than
 horizontal coarse scrolling. After examining horizontal coarse scrolling, we
-will combine the two which will give us unrestricted 2D scrolling.
+will combine the two which will give us unrestricted 2D scrolling. Fine
+scrolling is then built on top of coarse scrolling and will be addressed
+similarly: first horizontal, then vertical, and finally combined to give us an
+omnidirectional scrolled playfield.
 
 
 Definitions
@@ -135,7 +145,7 @@ old data is vanishing off the bottom of the screen.
 
 
 
-Vertical Coarse Scrolling
+Topic #1: Vertical Coarse Scrolling
 ------------------------------------------
 
 Coarse scrolling vertically is moving the playfield data such that the user
@@ -199,7 +209,7 @@ ANTIC mode 2 at the bottom for non-scrolling status lines.
 
 .. _coarse_scroll_down:
 
-Example: Coarse Scrolling Down
+#1.1: Coarse Scrolling Down
 ----------------------------------
 
 Scrolling down means new data is appearing at the bottom of the screen, pushing
@@ -261,7 +271,7 @@ then updates the screen memory pointer.
 
 
 
-Example: Coarse Scrolling Up
+#1.2: Coarse Scrolling Up
 ----------------------------------
 
 Scrolling up means new data is appearing at the top of the screen, pushing data
@@ -304,7 +314,7 @@ This gives the appearance of the playfield window moving up across the map.
 
 
 
-Horizontal Coarse Scrolling
+Topic #2: Horizontal Coarse Scrolling
 ------------------------------------------
 
 Horizontal coarse scrolling is only slightly more complicated than vertical
@@ -343,7 +353,7 @@ the addresses.
 
 .. _coarse_scroll_left:
 
-Example: Coarse Scrolling Left
+#2.1: Coarse Scrolling Left
 -----------------------------------
 
 Scrolling left means new data is appearing on the left of the screen, pushing
@@ -422,7 +432,7 @@ Here's the display list:
            .byte $2
            .byte $41,<dlist_lms_mode4,>dlist_lms_mode4 ; JVB ends display list
 
-Example: Coarse Scrolling Right
+#2.2: Coarse Scrolling Right
 -----------------------------------
 
 Scrolling right means new data is appearing on the right of the screen, pushing
@@ -464,7 +474,7 @@ The display list is exactly the same as in the scrolling left example.
 
 
 
-Combined Coarse Scrolling
+Topic #3: Combined Coarse Scrolling
 --------------------------------------------------
 
 Simultaneous horizontal and vertical coarse scrolling is possible with very
@@ -507,7 +517,7 @@ location of the viewport, and changing the low byte to set the horizontal
 location.
 
 
-Example: 2D Coarse Scrolling
+#3.1: 2D Coarse Scrolling
 -----------------------------------------------------
 
 This example scrolls the viewport simultaneously in the vertical and horizontal
@@ -648,7 +658,7 @@ were a pong game.
 
 
 
-Vertical Fine Scrolling
+Topic #4: Vertical Fine Scrolling
 -----------------------------------------------
 
 Vertical fine scrolling is controlled by ANTIC's ``VSCROL`` hardware register.
@@ -714,7 +724,7 @@ where it shows that 4 scan lines of line A have been scrolled off the screen
 .. _vscroll:
 
 The VSCROL Hardware Register
-------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``VSCROL`` hardware register at ``$d405`` controls how many scan lines are
 shifted for fine scrolling. The value tells ANTIC on which scan line to start
@@ -807,7 +817,7 @@ vertical scrolling bits.
 
 .. _vscroll_down:
 
-Example: Fine Scrolling Down
+#4.1: Fine Scrolling Down
 -------------------------------
 
 We can now add the ``VSCROL`` hardware register to the coarse scrolling demo to
@@ -881,7 +891,7 @@ from the coarse scrolling demo.
 
 .. _vscroll_up:
 
-Example: Fine Scrolling Up
+#4.2: Fine Scrolling Up
 ----------------------------
 
 The code for fine scrolling the viewport up has very few changes from the above.
@@ -932,7 +942,7 @@ controlled by two of the bits of the hardware register ``DMACTL`` at ``$d400``
 and its shadow ``SDMCTL`` at ``$22f``.
 
 
-Horizontal Fine Scrolling
+Topic #5: Horizontal Fine Scrolling
 ------------------------------------------------------
 
 Horizontal fine scrolling is controlled by ANTIC's ``HSCROL`` hardware
@@ -1010,7 +1020,7 @@ buffer for the extra data needed for the color clock shift.
 
 
 The HSCROL Hardware Register
-------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``HSCROL`` hardware register at ``$d404`` controls the horizontal shift for
 fine scrolling, measured in color clocks from 0 - 15.
@@ -1061,7 +1071,7 @@ the left side buffer zone that are shifted to the right into the visible area.
    * `De Re Atari, Chapter 2 <https://www.atariarchives.org/dere/chapt02.php>`_
 
 
-Example: Fine Scrolling Left
+#5.1: Fine Scrolling Left
 -------------------------------
 
 We can now add the ``HSCROL`` hardware register to the coarse scrolling demo to
@@ -1154,7 +1164,7 @@ scrolling of the viewport to the left, but the coarse scrolling requires
 
 
 
-Example: Fine Scrolling Right
+#5.2: Fine Scrolling Right
 ---------------------------------------
 
 The code for fine scrolling the viewport to the right has only minor
@@ -1176,7 +1186,7 @@ fine scrolling subroutine, and the ``LMS`` addresses in the coarse scrolling
 subroutine is incremented.
 
 
-Example: Fine Scrolling with Wide Playfield
+#5.3: Fine Scrolling with Wide Playfield
 -----------------------------------------------
 
 Since ANTIC expands the playfield to the next larger size when reading data for
@@ -1221,7 +1231,7 @@ for lots more information.
 
 .. _wide_dli:
 
-Example: Wide Scrolling Playfield with Normal Status Lines
+#5.4: Wide Scrolling Playfield with Normal Status Lines
 ----------------------------------------------------------------
 
 Using a simple DLI we can force the status lines back to their normal 40 byte
@@ -1320,7 +1330,7 @@ mid-screen changes.
 
 .. _combined_fine_scrolling:
 
-Combined Fine Scrolling
+Topic #6: Combined Fine Scrolling
 --------------------------------------------------
 
 Notice the difference between vertical scrolling and horizontal scrolling: For
@@ -1389,7 +1399,7 @@ and the last line in the scrolling region doesn't set the ``VSCROLL`` bit:
 
 
 
-Example: 2D Scrolling with DLI
+#6.1: 2D Scrolling with DLI
 --------------------------------------------------------------
 
 In the :ref:`example with the DLI<wide_dli>` for the wide scrolling playfield
