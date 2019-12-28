@@ -1469,6 +1469,8 @@ the **Select** key will change that to double the vertical scrolling rate,
 making it appear much closer to a 45 degree angle when scrolling diagonally.
 
 
+.. _code_walkthrough:
+
 Code Walkthrough: 2D Scrolling with DLI
 -----------------------------------------------------------------
 
